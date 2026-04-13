@@ -60,7 +60,8 @@ onMounted(() => {
 })
 
 // Daten holen mit Nuxt useFetch oder useAsyncData (SSR-optimiert)
-const { data: events, pending, refresh } = await useFetch('https://api.deineseite.de/events', {
+const config = useRuntimeConfig()
+const { data: events, pending, refresh } = await useFetch(`${config.public.apiBase}/events`, {
     headers: { Authorization: `Bearer ${process.client ? localStorage.getItem('token') : ''}` }
 });
 
@@ -68,7 +69,7 @@ const showForm = ref(false);
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '' });
 
 const saveEvent = async () => {
-    await $fetch('https://api.deineseite.de/events', {
+    await $fetch(`${config.public.apiBase}/events`, {
         method: 'POST',
         body: newEvent.value
     });
