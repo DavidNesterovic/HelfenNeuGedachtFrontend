@@ -1,6 +1,6 @@
 <template>
+    <OrganizationMenu></OrganizationMenu>
     <div>
-        <OrganizationMenu></OrganizationMenu>
 
         <main class="main-content">
             <header class="page-header">
@@ -59,14 +59,14 @@
 import OrganizationMenu from '../../components/OrganizationMenu.vue'
 
 onMounted(() => {
-    setTimeout(() => {
-        const authenticated = localStorage.getItem('token')
+    // setTimeout(() => {
+    //     const authenticated = localStorage.getItem('token')
 
-        if (authenticated) {
-            navigateTo('/dashboard')
-        } else {
-            navigateTo('/login')
-        }
-    }, 500)
+    //     if (authenticated) {
+    //         navigateTo('/dashboard')
+    //     } else {
+    //         navigateTo('/login')
+    //     }
+    // }, 500)
 })
 </script>
