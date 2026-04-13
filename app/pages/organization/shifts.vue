@@ -72,12 +72,14 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Punkte</label>
                                 <input v-model.number="shiftForm.points" type="number"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2">
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2"
+                                    min="1">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Alter</label>
                                 <input v-model.number="shiftForm.ageRestriction" type="number"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2">
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2"
+                                    min="0">
                             </div>
                         </div>
 

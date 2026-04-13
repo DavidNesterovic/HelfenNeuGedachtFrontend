@@ -14,8 +14,8 @@
                 <form @submit.prevent="saveEvent" class="grid grid-cols-2 gap-4">
                     <input v-model="newEvent.title" placeholder="Titel" class="border p-2 rounded" />
                     <input v-model="newEvent.location" placeholder="Ort" class="border p-2 rounded" />
-                    <input v-model="newEvent.startDate" type="datetime-local" class="border p-2 rounded" />
-                    <input v-model="newEvent.endDate" type="datetime-local" class="border p-2 rounded" />
+                    <input v-model="newEvent.startDate" type="datetime-local" :min="minDateTime" class="border p-2 rounded" />
+                    <input v-model="newEvent.endDate" type="datetime-local" :min="newEvent.startDate || minDateTime" class="border p-2 rounded" />
                     <button type="submit"
                         class="col-span-2 bg-green-600 text-white p-2 rounded font-bold">Speichern</button>
                 </form>
@@ -67,6 +67,11 @@ const { data: events, pending, refresh } = await useFetch(`${config.public.apiBa
 
 const showForm = ref(false);
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '' });
+
+const minDateTime = computed(() => {
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
+});
 
 const saveEvent = async () => {
     await $fetch(`${config.public.apiBase}/events`, {
