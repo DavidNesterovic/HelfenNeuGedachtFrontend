@@ -1,7 +1,3 @@
-<script setup>
-import OrganizationMenu from '../../components/OrganizationMenu.vue'
-</script>
-
 <template>
     <div>
         <OrganizationMenu></OrganizationMenu>
@@ -60,6 +56,8 @@ import OrganizationMenu from '../../components/OrganizationMenu.vue'
 </template>
 
 <script setup>
+import OrganizationMenu from '../../components/OrganizationMenu.vue'
+
 onMounted(() => {
     setTimeout(() => {
         const authenticated = localStorage.getItem('token')
