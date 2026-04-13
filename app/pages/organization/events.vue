@@ -8,7 +8,7 @@
           <h1 class="text-3xl font-bold text-gray-900">Veranstaltungen</h1>
           <p class="text-gray-600">Verwalten Sie Ihre Events und die zugehörigen Dienste</p>
         </div>
-        <button @click="showForm = !showForm" 
+        <button @click="showForm = !showForm"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-md">
           {{ showForm ? 'Abbrechen' : 'Neue Veranstaltung' }}
         </button>
@@ -86,10 +86,10 @@ const isLoading = ref(true);
 const isSubmitting = ref(false);
 const showForm = ref(false);
 
-const newEvent = ref({ 
-  title: '', 
-  location: '', 
-  startDate: '', 
+const newEvent = ref({
+  title: '',
+  location: '',
+  startDate: '',
   endDate: '',
   description: '' // Falls dein Backend das braucht
 });
@@ -118,6 +118,7 @@ const loadEvents = async () => {
 
 const saveEvent = async () => {
   const user = getUserInfo();
+  console.log(user);
   if (!user?.OrganizationId) {
     alert("Fehler: Organisations-ID konnte nicht gefunden werden.");
     return;

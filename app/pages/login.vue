@@ -74,6 +74,10 @@ const errorMessage = ref('')
 const loading = ref(false)
 let errorTimeout: ReturnType<typeof setTimeout> | null = null
 
+definePageMeta({
+  layout: false
+})
+
 const showError = (message: string) => {
   errorMessage.value = message
 
