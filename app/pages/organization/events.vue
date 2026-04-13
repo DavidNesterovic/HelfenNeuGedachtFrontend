@@ -1,84 +1,169 @@
 <template>
-    <div class="min-h-screen bg-gray-50 flex">
-        <OrganizationMenu />
+  <div class="min-h-screen bg-gray-50 flex">
+    <OrganizationMenu />
 
-        <main class="flex-1 ml-64 p-8">
-            <header class="flex justify-between items-center mb-8">
-                <h1 class="text-3xl font-bold">Veranstaltungen</h1>
-                <button @click="showForm = !showForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
-                    {{ showForm ? 'Abbrechen' : 'Neue Veranstaltung' }}
-                </button>
-            </header>
+    <main class="flex-1 ml-64 p-8">
+      <header class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Veranstaltungen</h1>
+          <p class="text-gray-600">Verwalten Sie Ihre Events und die zugehörigen Dienste</p>
+        </div>
+        <button @click="showForm = !showForm" 
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-md">
+          {{ showForm ? 'Abbrechen' : 'Neue Veranstaltung' }}
+        </button>
+      </header>
 
-            <div v-if="showForm" class="bg-white p-6 rounded-xl border mb-6 shadow-sm">
-                <form @submit.prevent="saveEvent" class="grid grid-cols-2 gap-4">
-                    <input v-model="newEvent.title" placeholder="Titel" class="border p-2 rounded" />
-                    <input v-model="newEvent.location" placeholder="Ort" class="border p-2 rounded" />
-                    <input v-model="newEvent.startDate" type="datetime-local" :min="minDateTime" class="border p-2 rounded" />
-                    <input v-model="newEvent.endDate" type="datetime-local" :min="newEvent.startDate || minDateTime" class="border p-2 rounded" />
-                    <button type="submit"
-                        class="col-span-2 bg-green-600 text-white p-2 rounded font-bold">Speichern</button>
-                </form>
+      <transition name="fade">
+        <div v-if="showForm" class="bg-white p-6 rounded-xl border mb-8 shadow-sm border-gray-200">
+          <h2 class="text-lg font-bold mb-4 text-gray-800">Neue Veranstaltung erstellen</h2>
+          <form @submit.prevent="saveEvent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
+              <input v-model="newEvent.title" placeholder="Sommerfest 2026" class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left">Event</th>
-                            <th class="px-6 py-3 text-left">Ort</th>
-                            <th class="px-6 py-3 text-center">Aktion</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="event in events" :key="event.id" class="border-t">
-                            <td class="px-6 py-4">{{ event.title }}</td>
-                            <td class="px-6 py-4">{{ event.location }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <button class="text-blue-600 font-medium">Details</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
+              <input v-model="newEvent.location" placeholder="Marktplatz" class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
-        </main>
-    </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Startdatum & Zeit</label>
+              <input v-model="newEvent.startDate" type="datetime-local" :min="minDateTime" class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+            </div>
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Enddatum & Zeit</label>
+              <input v-model="newEvent.endDate" type="datetime-local" :min="newEvent.startDate || minDateTime" class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+            </div>
+            <button type="submit" :disabled="isSubmitting"
+                    class="md:col-span-2 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
+              {{ isSubmitting ? 'Wird gespeichert...' : 'Veranstaltung speichern' }}
+            </button>
+          </form>
+        </div>
+      </transition>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div v-if="isLoading" class="p-12 text-center text-gray-500 animate-pulse">
+          Lade Veranstaltungen...
+        </div>
+        <table v-else class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Event</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ort</th>
+              <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Datum</th>
+              <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aktion</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-100">
+            <tr v-for="event in events" :key="event.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 font-medium text-gray-900">{{ event.title }}</td>
+              <td class="px-6 py-4 text-gray-600">{{ event.location }}</td>
+              <td class="px-6 py-4 text-gray-600 text-sm">
+                {{ new Date(event.startDate).toLocaleDateString('de-DE') }}
+              </td>
+              <td class="px-6 py-4 text-center">
+                <button @click="deleteEvent(event.id)" class="text-red-500 hover:text-red-700 text-sm font-bold">Löschen</button>
+              </td>
+            </tr>
+            <tr v-if="events.length === 0">
+              <td colspan="4" class="px-6 py-10 text-center text-gray-400">Keine Veranstaltungen gefunden.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
 </template>
 
 <script setup>
+// Nutze deine Utils
+import { getAuthHeader, logout, authenticatedFetch, getUserInfo } from '../../assets/utils/auth';
 
-onMounted(() => {
-    // setTimeout(() => {
-    //     const authenticated = localStorage.getItem('token')
-
-    //     if (authenticated) {
-    //         navigateTo('/dashboard')
-    //     } else {
-    //         navigateTo('/login')
-    //     }
-    // }, 500)
-})
-
-// Daten holen mit Nuxt useFetch oder useAsyncData (SSR-optimiert)
-const config = useRuntimeConfig()
-const { data: events, pending, refresh } = await useFetch(`${config.public.apiBase}/events`, {
-    headers: { Authorization: `Bearer ${process.client ? localStorage.getItem('token') : ''}` }
-});
-
+const config = useRuntimeConfig();
+const events = ref([]);
+const isLoading = ref(true);
+const isSubmitting = ref(false);
 const showForm = ref(false);
-const newEvent = ref({ title: '', location: '', startDate: '', endDate: '' });
 
-const minDateTime = computed(() => {
-    const now = new Date();
-    return now.toISOString().slice(0, 16);
+const newEvent = ref({ 
+  title: '', 
+  location: '', 
+  startDate: '', 
+  endDate: '',
+  description: '' // Falls dein Backend das braucht
 });
+
+// Heutiges Datum für den Datepicker-Min-Wert
+const minDateTime = computed(() => {
+  return new Date().toISOString().slice(0, 16);
+});
+
+// Daten laden
+const loadEvents = async () => {
+  if (!process.client) return;
+  isLoading.value = true;
+  try {
+    const data = await $fetch(`${config.public.apiBase}/events`, {
+      headers: { Authorization: getAuthHeader() }
+    });
+    events.value = data;
+  } catch (error) {
+    console.error("Fehler beim Laden:", error);
+    if (error.status === 401) logout();
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const saveEvent = async () => {
-    await $fetch(`${config.public.apiBase}/events`, {
-        method: 'POST',
-        body: newEvent.value
+  const user = getUserInfo();
+  if (!user?.OrganizationId) {
+    alert("Fehler: Organisations-ID konnte nicht gefunden werden.");
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    // Hier fügen wir die OrganizationId zum Payload hinzu
+    const payload = {
+      ...newEvent.value,
+      organizationId: parseInt(user.OrganizationId)
+    };
+
+    await authenticatedFetch(`${config.public.apiBase}/events`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
     });
+
     showForm.value = false;
-    refresh();
+    newEvent.value = { title: '', location: '', startDate: '', endDate: '', description: '' };
+    await loadEvents(); // Liste neu laden
+  } catch (error) {
+    alert("Fehler beim Speichern der Veranstaltung.");
+  } finally {
+    isSubmitting.value = false;
+  }
 };
+
+const deleteEvent = async (id) => {
+  if (!confirm("Möchten Sie dieses Event wirklich löschen?")) return;
+  try {
+    await authenticatedFetch(`${config.public.apiBase}/events/${id}`, {
+      method: 'DELETE'
+    });
+    await loadEvents();
+  } catch (error) {
+    alert("Löschen fehlgeschlagen.");
+  }
+};
+
+onMounted(() => {
+  loadEvents();
+});
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

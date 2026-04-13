@@ -72,14 +72,12 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Punkte</label>
                                 <input v-model.number="shiftForm.points" type="number"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2"
-                                    min="1">
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="1">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Alter</label>
                                 <input v-model.number="shiftForm.ageRestriction" type="number"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2"
-                                    min="0">
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="0">
                             </div>
                         </div>
 
@@ -109,16 +107,18 @@
 </template>
 
 <script setup>
-// State Management
+import { getAuthHeader, logout, authenticatedFetch } from '../../assets/utils/auth';
+
+const isLoading = ref(true); 
 const shifts = ref([]);
 const events = ref([]);
-const isLoading = ref(true);
+const config = useRuntimeConfig();
 
-// Modal States
+// Modal & Form State
 const isCreateModalOpen = ref(false);
 const isEditModalOpen = ref(false);
+const isSubmitting = ref(false);
 
-// Form Data
 const shiftForm = ref({
     id: null,
     name: '',
@@ -129,26 +129,33 @@ const shiftForm = ref({
     eventId: ''
 });
 
-// Daten laden
 const loadData = async () => {
+    if (!process.client) return;
+
     isLoading.value = true;
     try {
+        const headers = { Authorization: getAuthHeader() };
         const [shiftsRes, eventsRes] = await Promise.all([
-            $fetch(`${useRuntimeConfig().public.apiBase}/shifts`),
-            $fetch(`${useRuntimeConfig().public.apiBase}/events`)
+            $fetch(`${config.public.apiBase}/shifts`, { headers }),
+            $fetch(`${config.public.apiBase}/events`, { headers })
         ]);
+
         shifts.value = shiftsRes;
         events.value = eventsRes;
     } catch (error) {
-        console.error("Fehler beim Laden:", error);
+        console.error("Fehler beim Laden der Daten:", error);
+        if (error.status === 401) logout();
     } finally {
         isLoading.value = false;
     }
 };
 
-// CRUD Operationen
+onMounted(() => {
+    loadData();
+});
+
 const openCreateModal = () => {
-    shiftForm.value = { name: '', description: '', requirements: '', ageRestriction: 0, points: 10, eventId: '' };
+    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, points: 10, eventId: '' };
     isCreateModalOpen.value = true;
 };
 
@@ -158,33 +165,41 @@ const openEditModal = (shift) => {
 };
 
 const saveShift = async (isEdit = false) => {
+    isSubmitting.value = true;
     const url = isEdit
-        ? `${useRuntimeConfig().public.apiBase}/shifts/${shiftForm.value.id}`
-        : `${useRuntimeConfig().public.apiBase}/shifts`;
+        ? `${config.public.apiBase}/shifts/${shiftForm.value.id}`
+        : `${config.public.apiBase}/shifts`;
 
     try {
-        await $fetch(url, {
+        await authenticatedFetch(url, {
             method: isEdit ? 'PUT' : 'POST',
-            body: shiftForm.value
+            body: JSON.stringify(shiftForm.value)
         });
+
         isCreateModalOpen.value = false;
         isEditModalOpen.value = false;
-        await loadData(); // Liste aktualisieren
+
+        
+        await loadData();
     } catch (error) {
-        alert("Fehler beim Speichern");
+        alert("Fehler beim Speichern: " + error.message);
+    } finally {
+        isSubmitting.value = false;
     }
 };
 
 const deleteShift = async (id) => {
     if (!confirm("Diesen Dienst wirklich löschen?")) return;
     try {
-        await $fetch(`${useRuntimeConfig().public.apiBase}/shifts/${id}`, { method: 'DELETE' });
+        await authenticatedFetch(`${config.public.apiBase}/shifts/${id}`, {
+            method: 'DELETE'
+        });
         isEditModalOpen.value = false;
+        
         await loadData();
     } catch (error) {
         alert("Löschen fehlgeschlagen");
     }
 };
 
-onMounted(loadData);
 </script>

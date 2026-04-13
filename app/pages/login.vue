@@ -120,7 +120,7 @@ const login = async () => {
     })
 
     if (response.success && response.token) {
-      localStorage.setItem('token', response.token)
+      localStorage.setItem('helfenNeuGedacht_token', response.token)
       await navigateTo('/organization/dashboard')
       return
     }

@@ -6,7 +6,11 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:5062/api'
+      apiBase: 'http://localhost:5062/api',
+      hubBase: 'http://localhost:5062/hubs'
     }
+  },
+  build: {
+    transpile: ['@microsoft/signalr']
   }
 })
