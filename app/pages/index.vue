@@ -13,7 +13,7 @@ onMounted(() => {
     const authenticated = localStorage.getItem('token')
 
     if (authenticated) {
-      navigateTo('/dashboard')
+      navigateTo('/organization/dashboard')
     } else {
       navigateTo('/login')
     }
