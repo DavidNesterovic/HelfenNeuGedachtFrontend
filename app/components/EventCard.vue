@@ -134,11 +134,13 @@ const toggleParticipation = async () => {
   isSubmitting.value = true
 
   try {
+    const shiftId = props.event.shifts?.[0]?.id
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'POST',
       headers: { Authorization: getAuthHeader() },
-      body: {
-        eventId: props.event.id,
+      params: {
+        shiftId,
+        status: 1,
       },
     })
   } catch (e) {
