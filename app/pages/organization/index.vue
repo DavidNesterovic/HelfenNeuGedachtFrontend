@@ -96,6 +96,8 @@
 
 <script setup>
 // Reaktive Daten für das Formular
+definePageMeta({ middleware: 'auth' })
+
 const orgData = ref({
   name: '',
   description: '',

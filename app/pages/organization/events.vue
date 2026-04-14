@@ -214,6 +214,8 @@
 <script setup>
 import { getAuthHeader, logout, authenticatedFetch, getUserInfo } from '../../assets/utils/auth';
 
+definePageMeta({ middleware: 'auth' })
+
 const config = useRuntimeConfig();
 const events = ref([]);
 const isLoading = ref(true);

@@ -79,6 +79,22 @@ export const getUserInfo = () => {
     return token ? parseJwt(token) : null;
 };
 
+const ORG_ROLES = ['OrganizationUser', 'OrganizationAdmin', 'SuperAdmin'];
+
+export const getUserRole = () => {
+    const tokenData = parseJwt(getToken());
+    if (!tokenData) return null;
+    // ASP.NET Core emits ClaimTypes.Role as the full URI key in raw JWTs
+    const role = tokenData['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+        ?? tokenData['role'];
+    return Array.isArray(role) ? role[0] : (role ?? null);
+};
+
+export const getHomeRoute = () => {
+    const role = getUserRole();
+    return role && ORG_ROLES.includes(role) ? '/organization/dashboard' : '/events';
+};
+
 export const requireAuth = () => {
     if (process.client && !isAuthenticated()) {
         navigateTo('/login');

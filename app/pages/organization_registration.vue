@@ -331,6 +331,8 @@
 </template>
 
 <script setup lang="ts">
+import { saveToken, getHomeRoute } from '~/assets/utils/auth'
+
 definePageMeta({ layout: false })
 
 const wizardSteps = ['Kontakt-Informationen', 'Organisation-Details', 'Bestätigung']
@@ -476,8 +478,7 @@ const submitRegistration = async () => {
     })
 
     if (result.success && result.token) {
-      localStorage.setItem('token', result.token)
-      localStorage.setItem('userName', form.contactPersonName.trim())
+      saveToken(result.token)
       registrationSuccess.value = true
       return
     }
@@ -493,6 +494,6 @@ const submitRegistration = async () => {
 }
 
 const goToDashboard = async () => {
-  await navigateTo('organization/dashboard')
+  await navigateTo(getHomeRoute())
 }
 </script>

@@ -62,16 +62,22 @@
 </template>
 
 <script setup>
+import { getAuthHeader } from '~/assets/utils/auth'
+
 const props = defineProps({
   event: {
     type: Object,
     required: true,
   },
+  initialInterested: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const config = useRuntimeConfig()
 
-const isInterested = ref(false)
+const isInterested = ref(props.initialInterested)
 const isSubmitting = ref(false)
 
 const imageUrl = computed(() => {
@@ -130,6 +136,7 @@ const toggleParticipation = async () => {
   try {
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'POST',
+      headers: { Authorization: getAuthHeader() },
       body: {
         eventId: props.event.id,
       },

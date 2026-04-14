@@ -64,6 +64,7 @@
           v-for="event in filteredEvents"
           :key="event.id"
           :event="event"
+          :initialInterested="interestedEventIds.has(event.id)"
         />
       </template>
     </div>
@@ -73,9 +74,11 @@
 <script setup>
 import EventCard from '~/components/EventCard.vue'
 import FilterChip from '~/components/FilterChip.vue'
+import { getAuthHeader } from '~/assets/utils/auth'
 
 definePageMeta({
   layout: 'user',
+  middleware: 'auth',
 })
 
 const config = useRuntimeConfig()
@@ -103,6 +106,7 @@ const categories = [
 const pending = ref(true)
 const error = ref(false)
 const events = ref([])
+const interestedEventIds = ref(new Set())
 
 const toggleQuickFilter = (key) => {
   filters.value.quickFilter = filters.value.quickFilter === key ? null : key
@@ -153,10 +157,28 @@ const loadEvents = async () => {
   pending.value = true
   error.value = false
   try {
-    events.value = await $fetch(`${config.public.apiBase}/Events`)
-  } catch (e) {
-    console.error(e)
-    error.value = true
+    const [eventsRes, participationsRes] = await Promise.allSettled([
+      $fetch(`${config.public.apiBase}/Events`),
+      $fetch(`${config.public.apiBase}/Participation/user`, {
+        headers: { Authorization: getAuthHeader() },
+      }),
+    ])
+
+    if (eventsRes.status === 'fulfilled') {
+      events.value = eventsRes.value
+    } else {
+      error.value = true
+    }
+
+    if (participationsRes.status === 'fulfilled') {
+      const ids = new Set(
+        (participationsRes.value || [])
+          .filter(p => p.status === 'Interested')
+          .map(p => p.shift?.event?.id)
+          .filter(Boolean)
+      )
+      interestedEventIds.value = ids
+    }
   } finally {
     pending.value = false
   }
