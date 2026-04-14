@@ -64,7 +64,7 @@
           v-for="event in filteredEvents"
           :key="event.id"
           :event="event"
-          :initialInterested="interestedEventIds.has(event.id)"
+          :initialInterestedShiftIds="(event.shifts ?? []).filter(s => interestedShiftIds.has(s.id)).map(s => s.id)"
         />
       </template>
     </div>
@@ -106,7 +106,7 @@ const categories = [
 const pending = ref(true)
 const error = ref(false)
 const events = ref([])
-const interestedEventIds = ref(new Set())
+const interestedShiftIds = ref(new Set())
 
 const toggleQuickFilter = (key) => {
   filters.value.quickFilter = filters.value.quickFilter === key ? null : key
@@ -171,13 +171,12 @@ const loadEvents = async () => {
     }
 
     if (participationsRes.status === 'fulfilled') {
-      const ids = new Set(
+      interestedShiftIds.value = new Set(
         (participationsRes.value || [])
-          .filter(p => p.status === 'Interested')
-          .map(p => p.shift?.event?.id)
+          .filter(p => p.status === 0)
+          .map(p => p.shiftId)
           .filter(Boolean)
       )
-      interestedEventIds.value = ids
     }
   } finally {
     pending.value = false
