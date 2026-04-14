@@ -12,7 +12,7 @@
         Wird geladen...
       </div>
 
-      <div v-else-if="upcomingParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm text-center">
+      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm text-center">
         <div class="flex justify-center mb-4">
           <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="h-7 w-7 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -32,15 +32,14 @@
 
       <div v-else class="space-y-3">
         <div
-          v-for="p in upcomingParticipations"
-          :key="p.id"
+          v-for="p in confirmedParticipations"
+          :key="p.shiftId"
           class="rounded-2xl bg-white px-4 py-4 shadow-sm"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <p class="font-medium text-slate-900 text-[15px]">{{ p.shift?.event?.title }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">{{ p.shift?.event?.organization?.name }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">{{ formatDate(p.shift?.event?.startDate) }}</p>
+              <p class="font-medium text-slate-900 text-[15px]">{{ p.shiftName ?? 'Einsatz' }}</p>
+              <p class="mt-0.5 text-sm text-slate-400">Angemeldet am {{ formatDate(p.updatedAt) }}</p>
             </div>
             <span class="shrink-0 text-xs rounded-full bg-blue-50 text-blue-600 px-3 py-1 font-medium">
               Angemeldet
@@ -60,21 +59,17 @@
       <div v-else class="space-y-3">
         <div
           v-for="p in completedParticipations"
-          :key="p.id"
+          :key="p.shiftId"
           class="rounded-2xl bg-white px-4 py-4 shadow-sm"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <p class="font-medium text-slate-900 text-[15px]">{{ p.shift?.event?.title }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">{{ p.shift?.event?.organization?.name }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">{{ formatDate(p.shift?.event?.startDate) }}</p>
+              <p class="font-medium text-slate-900 text-[15px]">{{ p.shiftName ?? 'Einsatz' }}</p>
+              <p class="mt-0.5 text-sm text-slate-400">{{ formatDate(p.updatedAt) }}</p>
             </div>
             <div class="shrink-0 flex flex-col items-end gap-1.5">
               <span class="text-xs rounded-full bg-emerald-50 text-emerald-600 px-2.5 py-1 font-medium whitespace-nowrap">
                 ✓ Erledigt
-              </span>
-              <span v-if="p.shift?.points" class="text-xs text-indigo-600 font-medium">
-                +{{ p.shift.points }} Punkte
               </span>
             </div>
           </div>
@@ -105,26 +100,21 @@ const config = useRuntimeConfig()
 const pending = ref(true)
 const participations = ref([])
 
-const now = new Date()
-
-const upcomingParticipations = computed(() =>
-  participations.value.filter(p => {
-    if (p.status !== 'Confirmed') return false
-    const start = new Date(p.shift?.event?.startDate)
-    return !isNaN(start) && start > now
-  })
+// Backend enum: Interested=0, Confirmed=1, Completed=2, Canceled=3
+const confirmedParticipations = computed(() =>
+  participations.value.filter(p => p.status === 1)
 )
 
 const completedParticipations = computed(() =>
-  participations.value.filter(p => p.status === 'Completed')
+  participations.value.filter(p => p.status === 2)
 )
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return new Intl.DateTimeFormat('de-AT', {
-    weekday: 'short',
     day: '2-digit',
     month: 'short',
+    year: 'numeric',
   }).format(new Date(dateStr))
 }
 

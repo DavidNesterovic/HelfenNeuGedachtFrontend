@@ -32,19 +32,16 @@
     <div v-else class="mt-5 space-y-3">
       <div
         v-for="p in interestedParticipations"
-        :key="p.id"
+        :key="p.shiftId"
         class="rounded-2xl bg-white px-4 py-4 shadow-sm"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <p class="font-medium text-slate-900 text-[15px] truncate">
-              {{ p.shift?.event?.title ?? 'Einsatz' }}
+              {{ p.shiftName ?? 'Einsatz' }}
             </p>
             <p class="mt-0.5 text-sm text-slate-400">
-              {{ p.shift?.event?.organization?.name ?? '' }}
-            </p>
-            <p class="mt-0.5 text-sm text-slate-400">
-              {{ formatDate(p.shift?.event?.startDate) }}
+              Vorgemerkt am {{ formatDate(p.updatedAt) }}
             </p>
           </div>
           <div class="shrink-0">
@@ -67,8 +64,9 @@ const config = useRuntimeConfig()
 const pending = ref(true)
 const participations = ref([])
 
+// Interested = 0 in the backend enum
 const interestedParticipations = computed(() =>
-  participations.value.filter(p => p.status === 'Interested')
+  participations.value.filter(p => p.status === 0)
 )
 
 const interestedCount = computed(() => interestedParticipations.value.length)
@@ -76,9 +74,9 @@ const interestedCount = computed(() => interestedParticipations.value.length)
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return new Intl.DateTimeFormat('de-AT', {
-    weekday: 'short',
     day: '2-digit',
     month: 'short',
+    year: 'numeric',
   }).format(new Date(dateStr))
 }
 
