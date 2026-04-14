@@ -109,6 +109,8 @@
 <script setup>
 import { getAuthHeader, logout, authenticatedFetch } from '../../assets/utils/auth';
 
+definePageMeta({ middleware: 'auth' })
+
 const isLoading = ref(true); 
 const shifts = ref([]);
 const events = ref([]);

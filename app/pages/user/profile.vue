@@ -205,7 +205,7 @@
 <script setup>
 import { getAuthHeader, getUserInfo } from '~/assets/utils/auth.js'
 
-definePageMeta({ layout: 'user' })
+definePageMeta({ layout: 'user', middleware: 'auth' })
 
 const config = useRuntimeConfig()
 const pending = ref(true)

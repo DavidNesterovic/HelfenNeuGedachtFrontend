@@ -67,6 +67,8 @@
 // Nutze deine Utils (Pfade anpassen falls nötig)
 import { getAuthHeader, getToken } from '../../assets/utils/auth';
 
+definePageMeta({ middleware: 'auth' })
+
 const config = useRuntimeConfig();
 const eventsCount = ref(0);
 const shiftsCount = ref(0);

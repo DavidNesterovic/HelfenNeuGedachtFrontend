@@ -19,7 +19,7 @@
 const route = useRoute()
 
 const items = [
-  { to: '/user', label: 'Einsätze', icon: '⌂' },
+  { to: '/events', label: 'Einsätze', icon: '⌂' },
   { to: '/user/interested', label: 'Interessiert', icon: '♡' },
   { to: '/user/my-events', label: 'Meine', icon: '◫' },
   { to: '/user/profile', label: 'Profil', icon: '◌' },
