@@ -225,7 +225,7 @@ const loadEvents = async () => {
     isLoading.value = true;
     try {
         const userInfo = getUserInfo();
-        const data = await $fetch(`${config.public.apiBase}/events?organizationId=${userInfo.OrganizationId}`, {
+        const data = await $fetch(`${config.public.apiBase}/events/organization/${userInfo.OrganizationId}`, {
             headers: { Authorization: getAuthHeader() }
         });
         events.value = data;
