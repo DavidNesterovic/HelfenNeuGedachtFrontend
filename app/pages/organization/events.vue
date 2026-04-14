@@ -2,7 +2,7 @@
     <div class="min-h-screen bg-gray-50 flex">
         <OrganizationMenu />
 
-        <main class="flex-1 ml-64 p-8">
+        <main class="flex-1 p-8">
             <header class="flex justify-between items-center mb-8">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Veranstaltungen</h1>
@@ -166,8 +166,8 @@
                             class="flex justify-between items-center p-4 border rounded-xl hover:bg-gray-50 transition-colors">
                             <div>
                                 <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
-                                <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ shift.requiredHelpers }}
-                                    Helfer benötigt</p>
+                                <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ shift.helperList.length }}/{{ shift.requiredHelpers }}
+                                    Helfer</p>
                                 <div class="mt-4 p-2 bg-gray-50 rounded-lg">
                                     <h5 class="text-xs font-black uppercase text-gray-400 mb-2">Helfer:innen</h5>
 
