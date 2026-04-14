@@ -140,7 +140,7 @@ const toggleParticipation = async () => {
       headers: { Authorization: getAuthHeader() },
       params: {
         shiftId,
-        status: 1,
+        status: 0,
       },
     })
   } catch (e) {
