@@ -1,317 +1,340 @@
 <template>
-  <div class="wizard-container">
-    <div class="wizard-steps" v-if="!registrationSuccess">
-      <div
-          class="wizard-step"
-          :class="{ active: currentStep === 1, completed: currentStep > 1 }"
-      >
-        <div class="wizard-step-circle">1</div>
-        <div class="wizard-step-label">Kontakt-Informationen</div>
-      </div>
+  <div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-lg mx-auto">
 
-      <div
-          class="wizard-step"
-          :class="{ active: currentStep === 2, completed: currentStep > 2 }"
-      >
-        <div class="wizard-step-circle">2</div>
-        <div class="wizard-step-label">Organisation-Details</div>
-      </div>
+      <!-- Wizard steps -->
+      <div v-if="!registrationSuccess" class="relative flex justify-between mb-10">
+        <div class="absolute top-5 left-[10%] right-[10%] h-0.5 bg-gray-200 z-0" />
 
-      <div
-          class="wizard-step"
-          :class="{ active: currentStep === 3 }"
-      >
-        <div class="wizard-step-circle">3</div>
-        <div class="wizard-step-label">Bestätigung</div>
-      </div>
-    </div>
-
-    <div v-if="errorMessage" class="alert-box" style="background-color: #fee; border-left: 4px solid #c33; margin-bottom: 20px;">
-      <div class="alert-header">
-        <span>{{ errorMessage }}</span>
-      </div>
-    </div>
-
-    <div v-if="currentStep === 1 && !registrationSuccess" class="form-section">
-      <div class="card-header">
-        <div>
-          <h2>Kontakt-Informationen</h2>
-          <p style="color: var(--text-muted); font-size: 14px;">Erstellen Sie Ihr Administrator-Konto</p>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="contactPersonName">Vor- und Nachname</label>
-        <input
-            id="contactPersonName"
-            v-model="form.contactPersonName"
-            type="text"
-            class="form-input"
-            placeholder="Max Musterman"
-            required
+        <div
+          v-for="(step, i) in wizardSteps"
+          :key="i"
+          class="relative z-10 flex flex-col items-center gap-2 flex-1"
         >
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="contactEmail">E-Mail-Adresse</label>
-        <input
-            id="contactEmail"
-            v-model="form.contactEmail"
-            type="email"
-            class="form-input"
-            placeholder="ihre.email@beispiel.at"
-            required
-        >
-        <div class="form-hint">Diese E-Mail wird für Login und Benachrichtigungen verwendet</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="password">Passwort</label>
-        <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            class="form-input"
-            placeholder="Mindestens 8 Zeichen"
-            required
-        >
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="passwordConfirm">Passwort bestätigen</label>
-        <input
-            id="passwordConfirm"
-            v-model="form.passwordConfirm"
-            type="password"
-            class="form-input"
-            placeholder="Passwort wiederholen"
-            required
-        >
-      </div>
-
-      <div class="form-actions">
-        <NuxtLink to="/login" class="btn btn-outline">
-          Bereits registriert? Zum Login
-        </NuxtLink>
-
-        <button type="button" class="btn btn-primary" @click="nextStep(2)">
-          Weiter →
-        </button>
-      </div>
-    </div>
-
-    <div v-if="currentStep === 2 && !registrationSuccess" class="form-section">
-      <div class="card-header">
-        <div>
-          <h2>Organisation-Details</h2>
-          <p style="color: var(--text-muted); font-size: 14px;">Informationen über Ihre Organisation</p>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="organizationName">Name der Organisation</label>
-        <input
-            id="organizationName"
-            v-model="form.name"
-            type="text"
-            class="form-input"
-            placeholder="z.B. Sportverein Musterstadt e.V."
-            required
-        >
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="registrationNumber">Vereinsregisternummer</label>
-        <input
-            id="registrationNumber"
-            v-model="form.registrationNumber"
-            type="text"
-            class="form-input"
-            placeholder="z.B. VR 12345"
-        >
-        <div class="form-hint">Optional, aber empfohlen für die Verifizierung</div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="organizationType">Art der Organisation</label>
-        <select
-            id="organizationType"
-            v-model="form.type"
-            class="form-select"
-            required
-        >
-          <option value="">Bitte auswählen...</option>
-          <option value="Verein">Verein</option>
-          <option value="Gemeinde">Gemeinde</option>
-          <option value="Feuerwehr">Feuerwehr</option>
-          <option value="THW">THW (Technisches Hilfswerk)</option>
-          <option value="Kirche">Kirche / Religiöse Organisation</option>
-          <option value="NGO">NGO / Non-Profit Organisation</option>
-          <option value="Sonstige">Sonstige</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="street">Straße und Hausnummer</label>
-        <input
-            id="street"
-            v-model="form.street"
-            type="text"
-            class="form-input"
-            placeholder="z.B. Hauptstraße 123"
-            required
-        >
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="postalCode">Postleitzahl</label>
-          <input
-              id="postalCode"
-              v-model="form.postalCode"
-              type="text"
-              class="form-input"
-              placeholder="z.B. 12345"
-              required
+          <div
+            class="w-10 h-10 rounded-full border-2 flex items-center justify-center font-semibold text-sm transition-all"
+            :class="currentStep >= i + 1
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'bg-white border-gray-200 text-gray-400'"
           >
+            {{ i + 1 }}
+          </div>
+          <span class="text-[11px] font-medium text-gray-400 text-center">{{ step }}</span>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div
+        v-if="errorMessage"
+        class="mb-5 rounded-lg bg-red-50 border-l-4 border-red-500 px-4 py-3 text-sm text-red-700"
+      >
+        {{ errorMessage }}
+      </div>
+
+      <!-- Step 1: Kontakt-Informationen -->
+      <div v-if="currentStep === 1 && !registrationSuccess" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-gray-900">Kontakt-Informationen</h2>
+          <p class="text-sm text-gray-500 mt-1">Erstellen Sie Ihr Administrator-Konto</p>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="city">Stadt</label>
-          <input
-              id="city"
-              v-model="form.city"
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="contactPersonName">Vor- und Nachname</label>
+            <input
+              id="contactPersonName"
+              v-model="form.contactPersonName"
               type="text"
-              class="form-input"
-              placeholder="z.B. Musterstadt"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="Max Musterman"
               required
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="contactEmail">E-Mail-Adresse</label>
+            <input
+              id="contactEmail"
+              v-model="form.contactEmail"
+              type="email"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="ihre.email@beispiel.at"
+              required
+            >
+            <p class="mt-1 text-xs text-gray-400">Diese E-Mail wird für Login und Benachrichtigungen verwendet</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="password">Passwort</label>
+            <input
+              id="password"
+              v-model="form.password"
+              type="password"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="Mindestens 8 Zeichen"
+              required
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="passwordConfirm">Passwort bestätigen</label>
+            <input
+              id="passwordConfirm"
+              v-model="form.passwordConfirm"
+              type="password"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="Passwort wiederholen"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="flex justify-between gap-3 mt-7">
+          <NuxtLink
+            to="/login"
+            class="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm px-5 py-2.5 rounded-xl transition"
           >
+            Bereits registriert? Zum Login
+          </NuxtLink>
+          <button
+            type="button"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition"
+            @click="nextStep(2)"
+          >
+            Weiter →
+          </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="contactPhone">Telefonnummer (optional)</label>
-        <input
-            id="contactPhone"
-            v-model="form.contactPhone"
-            type="tel"
-            class="form-input"
-            placeholder="z.B. +49 123 456789"
-        >
-      </div>
+      <!-- Step 2: Organisation-Details -->
+      <div v-if="currentStep === 2 && !registrationSuccess" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-gray-900">Organisation-Details</h2>
+          <p class="text-sm text-gray-500 mt-1">Informationen über Ihre Organisation</p>
+        </div>
 
-      <div class="form-actions">
-        <button type="button" class="btn btn-outline" @click="prevStep(1)">
-          ← Zurück
-        </button>
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="organizationName">Name der Organisation</label>
+            <input
+              id="organizationName"
+              v-model="form.name"
+              type="text"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="z.B. Sportverein Musterstadt e.V."
+              required
+            >
+          </div>
 
-        <button type="button" class="btn btn-primary" @click="nextStep(3)">
-          Weiter →
-        </button>
-      </div>
-    </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="registrationNumber">Vereinsregisternummer</label>
+            <input
+              id="registrationNumber"
+              v-model="form.registrationNumber"
+              type="text"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="z.B. VR 12345"
+            >
+            <p class="mt-1 text-xs text-gray-400">Optional, aber empfohlen für die Verifizierung</p>
+          </div>
 
-    <div v-if="currentStep === 3 && !registrationSuccess" class="form-section">
-      <div class="card-header">
-        <div>
-          <h2>Bestätigung & Datenschutz</h2>
-          <p style="color: var(--text-muted); font-size: 14px;">Bestätigen Sie Ihre Angaben</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="organizationType">Art der Organisation</label>
+            <select
+              id="organizationType"
+              v-model="form.type"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white transition"
+              required
+            >
+              <option value="">Bitte auswählen...</option>
+              <option value="Verein">Verein</option>
+              <option value="Gemeinde">Gemeinde</option>
+              <option value="Feuerwehr">Feuerwehr</option>
+              <option value="THW">THW (Technisches Hilfswerk)</option>
+              <option value="Kirche">Kirche / Religiöse Organisation</option>
+              <option value="NGO">NGO / Non-Profit Organisation</option>
+              <option value="Sonstige">Sonstige</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="street">Straße und Hausnummer</label>
+            <input
+              id="street"
+              v-model="form.street"
+              type="text"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="z.B. Hauptstraße 123"
+              required
+            >
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5" for="postalCode">Postleitzahl</label>
+              <input
+                id="postalCode"
+                v-model="form.postalCode"
+                type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                placeholder="z.B. 12345"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5" for="city">Stadt</label>
+              <input
+                id="city"
+                v-model="form.city"
+                type="text"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                placeholder="z.B. Musterstadt"
+                required
+              >
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5" for="contactPhone">Telefonnummer (optional)</label>
+            <input
+              id="contactPhone"
+              v-model="form.contactPhone"
+              type="tel"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              placeholder="z.B. +49 123 456789"
+            >
+          </div>
+        </div>
+
+        <div class="flex justify-between gap-3 mt-7">
+          <button
+            type="button"
+            class="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm px-5 py-2.5 rounded-xl transition"
+            @click="prevStep(1)"
+          >
+            ← Zurück
+          </button>
+          <button
+            type="button"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition"
+            @click="nextStep(3)"
+          >
+            Weiter →
+          </button>
         </div>
       </div>
 
-      <h3 style="margin-bottom: 16px; font-size: 16px;">Ihre E-Mail</h3>
-      <div class="summary-section">
-        <div class="summary-value">{{ form.contactEmail || '-' }}</div>
-      </div>
+      <!-- Step 3: Bestätigung -->
+      <div v-if="currentStep === 3 && !registrationSuccess" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-gray-900">Bestätigung & Datenschutz</h2>
+          <p class="text-sm text-gray-500 mt-1">Bestätigen Sie Ihre Angaben</p>
+        </div>
 
-      <h3 style="margin-bottom: 16px; font-size: 16px;">Organisation</h3>
-      <div class="summary-section">
-        <div class="summary-value">{{ form.name || '-' }}</div>
-      </div>
+        <div class="space-y-4 mb-6">
+          <div>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Ihre E-Mail</p>
+            <p class="text-sm text-gray-800 bg-gray-50 rounded-lg px-3 py-2.5">{{ form.contactEmail || '-' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Organisation</p>
+            <p class="text-sm text-gray-800 bg-gray-50 rounded-lg px-3 py-2.5">{{ form.name || '-' }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Adresse</p>
+            <p class="text-sm text-gray-800 bg-gray-50 rounded-lg px-3 py-2.5">{{ summaryAddress }}</p>
+          </div>
+        </div>
 
-      <h3 style="margin-bottom: 16px; font-size: 16px;">Adresse</h3>
-      <div class="summary-section">
-        <div class="summary-value">{{ summaryAddress }}</div>
-      </div>
-
-      <div style="margin-top: 24px;">
-        <div class="checkbox-group">
-          <input
+        <div class="space-y-3 mb-7">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input
               id="acceptTerms"
               v-model="acceptTerms"
               type="checkbox"
-              class="checkbox-input"
+              class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
               required
-          >
-          <label for="acceptTerms" class="checkbox-label">
-            Ich akzeptiere die
-            <a href="#" @click.prevent="showPlaceholderAlert('Nutzungsbedingungen')">
-              Nutzungsbedingungen
-            </a>
+            >
+            <span class="text-sm text-gray-600">
+              Ich akzeptiere die
+              <a href="#" class="text-blue-600 hover:underline" @click.prevent="showPlaceholderAlert('Nutzungsbedingungen')">Nutzungsbedingungen</a>
+            </span>
           </label>
-        </div>
 
-        <div class="checkbox-group">
-          <input
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input
               id="acceptPrivacy"
               v-model="acceptPrivacy"
               type="checkbox"
-              class="checkbox-input"
+              class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
               required
-          >
-          <label for="acceptPrivacy" class="checkbox-label">
-            Ich habe die
-            <a href="#" @click.prevent="showPlaceholderAlert('Datenschutzerklärung')">
-              Datenschutzerklärung
-            </a>
-            gelesen und stimme zu
+            >
+            <span class="text-sm text-gray-600">
+              Ich habe die
+              <a href="#" class="text-blue-600 hover:underline" @click.prevent="showPlaceholderAlert('Datenschutzerklärung')">Datenschutzerklärung</a>
+              gelesen und stimme zu
+            </span>
           </label>
-        </div>
 
-        <div class="checkbox-group">
-          <input
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input
               id="acceptNewsletter"
               v-model="acceptNewsletter"
               type="checkbox"
-              class="checkbox-input"
-          >
-          <label for="acceptNewsletter" class="checkbox-label">
-            Ich möchte Updates und Neuigkeiten per E-Mail erhalten (optional)
+              class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer shrink-0"
+            >
+            <span class="text-sm text-gray-600">Ich möchte Updates und Neuigkeiten per E-Mail erhalten (optional)</span>
           </label>
+        </div>
+
+        <div class="flex justify-between gap-3">
+          <button
+            type="button"
+            class="border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm px-5 py-2.5 rounded-xl transition"
+            @click="prevStep(2)"
+          >
+            Zurück
+          </button>
+          <button
+            type="button"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition disabled:opacity-60"
+            :disabled="loading"
+            @click="submitRegistration"
+          >
+            {{ loading ? 'Registrierung läuft...' : 'Registrierung abschließen' }}
+          </button>
         </div>
       </div>
 
-      <div class="form-actions">
-        <button type="button" class="btn btn-outline" @click="prevStep(2)">
-          Zurück
-        </button>
-
-        <button
-            type="button"
-            class="btn btn-primary btn-lg"
-            :disabled="loading"
-            @click="submitRegistration"
-        >
-          {{ loading ? 'Registrierung läuft...' : 'Registrierung abschließen' }}
-        </button>
-      </div>
-    </div>
-
-    <div v-if="registrationSuccess" class="form-section">
-      <div class="text-center">
-        <h2>Registrierung erfolgreich!</h2>
-        <p style="color: var(--text-muted); margin: 16px 0;">
+      <!-- Success state -->
+      <div v-if="registrationSuccess" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Registrierung erfolgreich!</h2>
+        <p class="text-sm text-gray-500 mb-6">
           Ihre Organisation wurde erfolgreich registriert. Sie erhalten in Kürze eine Bestätigungs-E-Mail.
         </p>
-        <button type="button" class="btn btn-primary btn-lg" @click="goToDashboard">
+        <button
+          type="button"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl transition"
+          @click="goToDashboard"
+        >
           Zum Dashboard →
         </button>
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: false })
+
+const wizardSteps = ['Kontakt-Informationen', 'Organisation-Details', 'Bestätigung']
+
 const currentStep = ref(1)
 const loading = ref(false)
 const registrationSuccess = ref(false)
@@ -340,7 +363,6 @@ const summaryAddress = computed(() => {
   if (!form.street || !form.postalCode || !form.city) {
     return '-'
   }
-
   return `${form.street}, ${form.postalCode} ${form.city}`
 })
 
@@ -362,10 +384,10 @@ const validateStep = (step: number) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
     if (
-        !form.contactPersonName.trim() ||
-        !form.contactEmail.trim() ||
-        !form.password ||
-        !form.passwordConfirm
+      !form.contactPersonName.trim() ||
+      !form.contactEmail.trim() ||
+      !form.password ||
+      !form.passwordConfirm
     ) {
       showError('Bitte füllen Sie alle Pflichtfelder aus.')
       return false
@@ -389,11 +411,11 @@ const validateStep = (step: number) => {
 
   if (step === 2) {
     if (
-        !form.name.trim() ||
-        !form.type ||
-        !form.street.trim() ||
-        !form.postalCode.trim() ||
-        !form.city.trim()
+      !form.name.trim() ||
+      !form.type ||
+      !form.street.trim() ||
+      !form.postalCode.trim() ||
+      !form.city.trim()
     ) {
       showError('Bitte füllen Sie alle Pflichtfelder aus.')
       return false
@@ -405,10 +427,7 @@ const validateStep = (step: number) => {
 }
 
 const nextStep = (step: number) => {
-  if (!validateStep(currentStep.value)) {
-    return
-  }
-
+  if (!validateStep(currentStep.value)) return
   currentStep.value = step
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -466,7 +485,7 @@ const submitRegistration = async () => {
     showError(`Registrierung fehlgeschlagen: ${result.message || 'Unbekannter Fehler'}`)
   } catch (error: any) {
     showError(
-        error?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
+      error?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
     )
   } finally {
     loading.value = false
