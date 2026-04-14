@@ -1,79 +1,71 @@
 <template>
-  <div class="mx-auto w-full max-w-5xl px-4 sm:px-5 lg:px-8 pt-5 sm:pt-7">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h1 class="text-xl sm:text-[22px] font-medium text-slate-900">
-        Alle Einsätze
-      </h1>
-
-      <button
-          type="button"
-          class="self-start sm:self-auto text-sm sm:text-base lg:text-lg font-medium text-blue-600"
-      >
-        Swipe-Ansicht
-      </button>
+  <div>
+    <div class="-mx-4 -mt-5 bg-white px-4 pt-5 pb-4 border-b border-slate-100">
+      <h1 class="text-[17px] font-semibold text-slate-900">Alle Einsätze</h1>
     </div>
 
-    <div class="mt-5 sm:mt-7">
-      <div class="rounded-2xl sm:rounded-[22px] bg-slate-200/70 px-4 sm:px-5 py-3 sm:py-4">
+    <div class="mt-4">
+      <div class="rounded-2xl bg-slate-100 px-4 py-3">
         <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Einsätze suchen..."
-            class="w-full bg-transparent text-base sm:text-lg text-slate-700 outline-none placeholder:text-slate-500"
+          v-model="filters.search"
+          type="text"
+          placeholder="Einsätze suchen..."
+          class="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
         >
       </div>
     </div>
 
-    <div class="mt-5 sm:mt-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+    <div class="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
       <FilterChip
-          v-for="quickFilter in quickFilters"
-          :key="quickFilter.key"
+        v-for="f in quickFilters"
+        :key="f.key"
+        :active="filters.quickFilter === f.key"
+        @click="toggleQuickFilter(f.key)"
       >
-        {{ quickFilter.label }}
+        {{ f.label }}
       </FilterChip>
     </div>
 
-    <div class="mt-4 sm:mt-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+    <div class="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
       <FilterChip
-          v-for="category in categories"
-          :key="category.key"
+        v-for="c in categories"
+        :key="c.key"
+        :active="filters.category === c.key"
+        @click="toggleCategory(c.key)"
       >
-        {{ category.label }}
+        {{ c.label }}
       </FilterChip>
     </div>
 
-    <div class="mt-6 sm:mt-7 space-y-4 sm:space-y-5">
+    <div class="mt-5 space-y-3">
       <div
-          v-if="pending"
-          class="rounded-3xl bg-white p-5 sm:p-6 text-slate-500 shadow-sm"
+        v-if="pending"
+        class="rounded-3xl bg-white p-5 text-sm text-slate-400 shadow-sm"
       >
         Einsätze werden geladen...
       </div>
 
       <div
-          v-else-if="error"
-          class="rounded-3xl bg-white p-5 sm:p-6 text-red-600 shadow-sm"
+        v-else-if="error"
+        class="rounded-3xl bg-white p-5 text-sm text-red-500 shadow-sm"
       >
         Einsätze konnten nicht geladen werden.
       </div>
 
       <div
-          v-else-if="events.length === 0"
-          class="rounded-3xl bg-white p-5 sm:p-6 text-slate-500 shadow-sm"
+        v-else-if="filteredEvents.length === 0"
+        class="rounded-3xl bg-white p-5 text-sm text-slate-400 shadow-sm"
       >
         Keine Einsätze gefunden.
       </div>
 
-      <div
-          v-else
-          class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5"
-      >
+      <template v-else>
         <EventCard
-            v-for="event in events"
-            :key="event.id"
-            :event="event"
+          v-for="event in filteredEvents"
+          :key="event.id"
+          :event="event"
         />
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -112,29 +104,63 @@ const pending = ref(true)
 const error = ref(false)
 const events = ref([])
 
+const toggleQuickFilter = (key) => {
+  filters.value.quickFilter = filters.value.quickFilter === key ? null : key
+}
+
+const toggleCategory = (key) => {
+  filters.value.category = filters.value.category === key ? null : key
+}
+
+const filteredEvents = computed(() => {
+  let result = events.value
+
+  if (filters.value.search.trim()) {
+    const q = filters.value.search.trim().toLowerCase()
+    result = result.filter(e =>
+      e.title?.toLowerCase().includes(q) ||
+      e.location?.toLowerCase().includes(q)
+    )
+  }
+
+  if (filters.value.quickFilter === 'today') {
+    const todayStr = new Date().toDateString()
+    result = result.filter(e => new Date(e.startDate).toDateString() === todayStr)
+  } else if (filters.value.quickFilter === 'weekend') {
+    const today = new Date()
+    const daysToSat = (6 - today.getDay() + 7) % 7
+    const sat = new Date(today)
+    sat.setDate(today.getDate() + daysToSat)
+    const sun = new Date(sat)
+    sun.setDate(sat.getDate() + 1)
+    const satStr = sat.toDateString()
+    const sunStr = sun.toDateString()
+    result = result.filter(e => {
+      const s = new Date(e.startDate).toDateString()
+      return s === satStr || s === sunStr
+    })
+  } else if (filters.value.quickFilter === 'short') {
+    result = result.filter(e => {
+      const ms = new Date(e.endDate) - new Date(e.startDate)
+      return ms > 0 && ms < 2 * 60 * 60 * 1000
+    })
+  }
+
+  return result
+})
+
 const loadEvents = async () => {
   pending.value = true
   error.value = false
-
   try {
-    events.value = await $fetch(`${config.public.apiBase}/Events`, {
-      // later for backend filtering:
-      // query: {
-      //   search: filters.value.search,
-      //   quickFilter: filters.value.quickFilter,
-      //   category: filters.value.category,
-      // }
-    })
+    events.value = await $fetch(`${config.public.apiBase}/Events`)
   } catch (e) {
     console.error(e)
     error.value = true
   } finally {
-    console.log(events.value);
     pending.value = false
   }
 }
 
-onMounted(async () => {
-  await loadEvents()
-})
+onMounted(loadEvents)
 </script>
