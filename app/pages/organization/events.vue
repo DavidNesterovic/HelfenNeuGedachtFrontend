@@ -23,7 +23,7 @@
                     <form @submit.prevent="saveEvent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
-                            <input v-model="newEvent.title" placeholder="Sommerfest 2026"
+                            <input v-model="newEvent.title" placeholder="Sommerfest"
                                 class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div class="flex flex-col md:col-span-2">
@@ -82,7 +82,7 @@
                                 {{ formatDate(event.startDate) }}
                             </td>
                             <td class="px-6 py-4 text-center font-semibold text-blue-600">
-                                {{ calculateTotalHelpers(event) }}
+                                {{ event.promisedHelpers + "/" + event.requiredHelpers }}
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center gap-4 font-bold uppercase text-xs">
@@ -147,8 +147,8 @@
                             class="w-full border p-2 rounded shadow-sm outline-none"></textarea>
                         <div class="grid grid-cols-2 gap-2">
                             <label for="helpers">Anzahl Helfer</label>
-                            <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers" placeholder="Helfer Anzahl"
-                                class="border p-2 rounded shadow-sm outline-none" />
+                            <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
+                                placeholder="Helfer Anzahl" class="border p-2 rounded shadow-sm outline-none" />
                             <label for="points">Punkte</label>
                             <input v-model.number="shiftForm.points" type="number" name="points" placeholder="Punkte"
                                 class="border p-2 rounded shadow-sm outline-none" />
@@ -219,11 +219,6 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const calculateTotalHelpers = (event) => {
-    if (!event.shifts) return 0;
-    return event.shifts.reduce((sum, s) => sum + (s.requiredHelpers || 0), 0);
-};
-
 // API: Veranstaltungen laden
 const loadEvents = async () => {
     if (!process.client) return;
@@ -234,6 +229,31 @@ const loadEvents = async () => {
             headers: { Authorization: getAuthHeader() }
         });
         events.value = data;
+
+        for (const event of events.value) {
+            const shifts = await $fetch(`${config.public.apiBase}/shifts?eventId=${event.id}`, {
+                headers: { Authorization: getAuthHeader() }
+            });
+
+            let requiredHelpers = 0;
+            let promisedHelpers = 0;
+
+            for (const shift of shifts) {
+                console.log(shift)
+                requiredHelpers += shift.requiredHelpers;
+                
+                const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+                    headers: { Authorization: getAuthHeader() }
+                });
+                console.log(helpers.length);
+                promisedHelpers += helpers.length;
+            }
+           
+            event.shifts = shifts;
+            event.requiredHelpers = requiredHelpers;
+            event.promisedHelpers = promisedHelpers;
+        }
+
         if (selectedEvent.value) {
             selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
         }
@@ -316,13 +336,11 @@ const saveShift = async () => {
 
         resetShiftForm();
 
-        // Daten neu laden
         const updatedEvent = await $fetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
             params: { includeShifts: true },
             headers: { Authorization: getAuthHeader() }
         });
 
-        // WICHTIG: Wir aktualisieren beides
         selectedEvent.value = { ...updatedEvent };
         currentShifts.value = [...(updatedEvent.shifts || updatedEvent.Shifts || [])];
 
