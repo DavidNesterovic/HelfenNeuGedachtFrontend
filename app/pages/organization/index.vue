@@ -95,7 +95,8 @@
 </template>
 
 <script setup>
-// Reaktive Daten für das Formular
+import { getUserInfo, getToken } from '~/assets/utils/auth'
+
 definePageMeta({ middleware: 'auth' })
 
 const orgData = ref({
@@ -119,11 +120,20 @@ const isLoading = ref(true);
 const errorMessage = ref('');
 const organizationId = ref(null);
 
-// Organisation-ID aus dem Token holen (Client-side)
+const authHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 onMounted(async () => {
   if (process.client) {
-    const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-    organizationId.value = userInfo.OrganizationId;
+    const userInfo = getUserInfo();
+    console.log('[DEBUG] JWT Payload:', userInfo);
+    organizationId.value =
+      userInfo?.OrganizationId ??
+      userInfo?.organizationId ??
+      userInfo?.organization_id ??
+      null;
 
     if (!organizationId.value) {
       errorMessage.value = "Keine Organisations-ID gefunden.";
@@ -134,27 +144,33 @@ onMounted(async () => {
   }
 });
 
-// Daten laden
 const loadOrganizationData = async () => {
   isLoading.value = true;
   try {
-    const data = await $fetch(`${useRuntimeConfig().public.apiBase}/organization/${organizationId.value}`);
+    const data = await $fetch(
+      `${useRuntimeConfig().public.apiBase}/organization/${organizationId.value}`,
+      { headers: authHeaders() }
+    );
     orgData.value = data;
     errorMessage.value = '';
   } catch (error) {
+    console.error('Fehler beim Laden:', error);
     errorMessage.value = "Fehler beim Laden der Daten.";
   } finally {
     isLoading.value = false;
   }
 };
 
-// Daten speichern
 const saveChanges = async () => {
   try {
-    await $fetch(`${useRuntimeConfig().public.apiBase}/organization/${organizationId.value}`, {
-      method: 'PUT',
-      body: orgData.value
-    });
+    await $fetch(
+      `${useRuntimeConfig().public.apiBase}/organization/${organizationId.value}`,
+      {
+        method: 'PUT',
+        body: orgData.value,
+        headers: authHeaders()
+      }
+    );
     alert('Änderungen erfolgreich gespeichert!');
   } catch (error) {
     alert('Fehler beim Speichern der Änderungen.');
