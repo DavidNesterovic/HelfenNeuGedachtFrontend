@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 flex">
     <OrganizationMenu />
 
-    <main class="flex-1 ml-64 p-8">
+    <main class="flex-1 p-8">
       <header class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Willkommen!</h1>
         <p class="text-gray-600">Hier ist Ihre aktuelle Übersicht über den Helfer-Bedarf</p>
