@@ -156,7 +156,7 @@
     </div>
 
     <!-- Präferenzen -->
-    <div class="mt-6 mb-4">
+    <div class="mt-6">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Präferenzen</h2>
       <div class="rounded-2xl bg-white shadow-sm overflow-hidden">
         <div class="flex items-center gap-3 px-4 py-3.5 border-b border-slate-50">
@@ -199,11 +199,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Logout -->
+    <div class="mt-6 mb-4">
+      <button
+        class="w-full rounded-2xl bg-white shadow-sm px-4 py-3.5 flex items-center gap-3 text-red-500 hover:bg-red-50 transition"
+        @click="handleLogout"
+      >
+        <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 12H9m0 0l3-3m-3 3l3 3" />
+        </svg>
+        <span class="text-[14px] font-medium">Abmelden</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { getAuthHeader, getUserInfo } from '~/assets/utils/auth.js'
+import { getAuthHeader, getUserInfo, logout } from '~/assets/utils/auth.js'
 
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
@@ -294,6 +307,8 @@ const rewards = [
   { name: 'Restaurant-Gutschein', cost: 100 },
   { name: 'Konzert-Ticket', cost: 200 },
 ]
+
+const handleLogout = () => logout()
 
 onMounted(async () => {
   try {
