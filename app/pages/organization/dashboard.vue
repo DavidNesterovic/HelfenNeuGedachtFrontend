@@ -65,7 +65,7 @@
 
 <script setup>
 // Nutze deine Utils (Pfade anpassen falls nötig)
-import { getAuthHeader, getToken } from '../../assets/utils/auth';
+import { getAuthHeader, getToken, getUserInfo } from '../../assets/utils/auth';
 
 definePageMeta({ middleware: 'auth' })
 
@@ -80,12 +80,15 @@ let connection = null;
 
 const loadDashboardData = async () => {
   if (!process.client) return;
+
+  const userInfo = getUserInfo();
+  console.log(userInfo.OrganizationId);
   
   try {
     const headers = { Authorization: getAuthHeader() };
     
     const [eventsRes, shiftsRes] = await Promise.all([
-      $fetch(`${config.public.apiBase}/events`, { headers }),
+      $fetch(`${config.public.apiBase}/events/organization/${userInfo.OrganizationId}`, { headers }),
       $fetch(`${config.public.apiBase}/shifts`, { headers })
     ]);
 
@@ -111,7 +114,6 @@ const initSignalR = async () => {
   const signalR = await import('@microsoft/signalr');
   
   const baseHubUrl = config.public.hubBase;
-  console.log("Verbindungsversuch zu:", baseHubUrl);
 
   if (!baseHubUrl || baseHubUrl.includes('undefined')) {
     console.error("KRITISCH: Hub URL ist nicht geladen!", config.public);
@@ -133,12 +135,10 @@ const initSignalR = async () => {
       .build();
 
     connection.on('dashboardUpdated', () => {
-      console.log('SignalR: Update empfangen');
       loadDashboardData();
     });
 
     await connection.start();
-    console.log('SignalR erfolgreich verbunden!');
   } catch (err) {
     console.error('SignalR Start Fehler:', err);
   }

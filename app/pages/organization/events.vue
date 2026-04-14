@@ -168,6 +168,21 @@
                                 <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
                                 <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ shift.requiredHelpers }}
                                     Helfer benötigt</p>
+                                <div class="mt-4 p-2 bg-gray-50 rounded-lg">
+                                    <h5 class="text-xs font-black uppercase text-gray-400 mb-2">Helfer:innen</h5>
+
+                                    <div v-if="shift.helperList && shift.helperList.length > 0">
+                                        <div v-for="helper in shift.helperList" :key="helper.userId"
+                                            class="text-sm text-gray-700 flex items-center gap-2">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                            {{ helper.userName }}
+                                        </div>
+                                    </div>
+
+                                    <div v-else class="text-xs text-gray-400 italic">
+                                        Noch keine Helfer:innen eingetragen
+                                    </div>
+                                </div>
                             </div>
                             <div class="flex gap-2">
                                 <button @click="editShift(shift)"
@@ -241,20 +256,22 @@ const loadEvents = async () => {
             let promisedHelpers = 0;
 
             for (const shift of shifts) {
-                console.log(shift)
                 requiredHelpers += shift.requiredHelpers;
-                
+
                 const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
                     headers: { Authorization: getAuthHeader() }
                 });
-                console.log(helpers.length);
+
                 promisedHelpers += helpers.length;
+                shift.helperList = helpers;
             }
-           
+
             event.shifts = shifts;
             event.requiredHelpers = requiredHelpers;
             event.promisedHelpers = promisedHelpers;
         }
+
+        console.log(events);
 
         if (selectedEvent.value) {
             selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
@@ -307,8 +324,23 @@ const openDetails = async (event) => {
             headers: { Authorization: getAuthHeader() }
         });
 
+        const shiftsWithHelpers = data.shifts || data.Shifts || [];
+
+        for (const shift of shiftsWithHelpers) {
+            try {
+                const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+                    headers: { Authorization: getAuthHeader() }
+                });
+                shift.helperList = helpers;
+            } catch (helperErr) {
+                console.error(`Fehler beim Laden der Helfer für Dienst ${shift.id}:`, helperErr);
+                shift.helperList = [];
+            }
+        }
+
         selectedEvent.value = data;
-        currentShifts.value = data.shifts || data.Shifts || [];
+        currentShifts.value = shiftsWithHelpers;
+
     } catch (error) {
         console.error("Fehler beim Laden der Event-Details:", error);
     }
