@@ -71,6 +71,7 @@
                             <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ort</th>
                             <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Datum</th>
                             <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Helfer</th>
+                            <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
                             <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aktion</th>
                         </tr>
                     </thead>
@@ -85,6 +86,11 @@
                                 {{ event.promisedHelpers + "/" + event.requiredHelpers }}
                             </td>
                             <td class="px-6 py-4 text-center">
+                                <span :class="getStatusBadgeClass(event.eventStatus)" class="px-2.5 py-1 rounded-full text-xs font-semibold border">
+                                    {{ getStatusLabel(event.eventStatus) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                     <button @click="openDetails(event)"
                                         class="text-blue-600 hover:text-blue-800">Details</button>
@@ -94,7 +100,7 @@
                             </td>
                         </tr>
                         <tr v-if="events.length === 0">
-                            <td colspan="5" class="px-6 py-10 text-center text-gray-400 font-medium">Keine
+                            <td colspan="6" class="px-6 py-10 text-center text-gray-400 font-medium">Keine
                                 Veranstaltungen gefunden.</td>
                         </tr>
                     </tbody>
@@ -128,6 +134,21 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>{{ selectedEvent.location }}</span>
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-200/50 pt-3">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Event-Status:</label>
+                        <select 
+                            v-model="selectedEvent.eventStatus" 
+                            @change="updateEventStatus"
+                            :disabled="isUpdatingStatus"
+                            class="border rounded-lg px-2.5 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none transition disabled:opacity-60 font-semibold"
+                        >
+                            <option :value="0">Geplant</option>
+                            <option :value="1">Findet statt</option>
+                            <option :value="2">Durchgeführt</option>
+                            <option :value="3">Abgesagt</option>
+                        </select>
+                        <span v-if="isUpdatingStatus" class="text-xs text-blue-600 animate-pulse font-medium">Wird aktualisiert...</span>
                     </div>
                 </div>
 
@@ -236,6 +257,80 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
+const normalizeStatus = (statusVal) => {
+    if (statusVal === undefined || statusVal === null) return 0;
+    if (typeof statusVal === 'number') return statusVal;
+    
+    const parsed = parseInt(statusVal);
+    if (!isNaN(parsed)) return parsed;
+    
+    const statusMap = {
+        'Planned': 0,
+        'TakePlace': 1,
+        'Accomplished': 2,
+        'Canceled': 3
+    };
+    return statusMap[statusVal] !== undefined ? statusMap[statusVal] : 0;
+};
+
+const isUpdatingStatus = ref(false);
+
+const getStatusLabel = (status) => {
+    const norm = normalizeStatus(status);
+    switch (norm) {
+        case 0: return 'Geplant';
+        case 1: return 'Findet statt';
+        case 2: return 'Durchgeführt';
+        case 3: return 'Abgesagt';
+        default: return 'Geplant';
+    }
+};
+
+const getStatusBadgeClass = (status) => {
+    const norm = normalizeStatus(status);
+    switch (norm) {
+        case 0: // Planned
+            return 'bg-blue-50 text-blue-700 border-blue-200';
+        case 1: // TakePlace
+            return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        case 2: // Accomplished
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 3: // Canceled
+            return 'bg-red-50 text-red-700 border-red-200';
+        default:
+            return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+};
+
+const updateEventStatus = async () => {
+    if (!selectedEvent.value) return;
+    isUpdatingStatus.value = true;
+    try {
+        const payload = {
+            id: selectedEvent.value.id,
+            title: selectedEvent.value.title,
+            description: selectedEvent.value.description,
+            location: selectedEvent.value.location,
+            startDate: selectedEvent.value.startDate,
+            endDate: selectedEvent.value.endDate,
+            organizationId: selectedEvent.value.organizationId,
+            eventStatus: parseInt(selectedEvent.value.eventStatus)
+        };
+        
+        await authenticatedFetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+        
+        await loadEvents();
+    } catch (error) {
+        alert("Fehler beim Aktualisieren des Event-Status.");
+        console.error(error);
+    } finally {
+        isUpdatingStatus.value = false;
+    }
+};
+
 // API: Veranstaltungen laden
 const loadEvents = async () => {
     if (!process.client) return;
@@ -248,6 +343,8 @@ const loadEvents = async () => {
         events.value = data;
 
         for (const event of events.value) {
+            console.log(event);
+            event.eventStatus = normalizeStatus(event.eventStatus !== undefined ? event.eventStatus : event.eventStatus);
             const shifts = await $fetch(`${config.public.apiBase}/shifts?eventId=${event.id}`, {
                 headers: { Authorization: getAuthHeader() }
             });
@@ -287,7 +384,11 @@ const saveEvent = async () => {
     const user = getUserInfo();
     isSubmitting.value = true;
     try {
-        const payload = { ...newEvent.value, organizationId: parseInt(user.OrganizationId) };
+        const payload = { 
+            ...newEvent.value, 
+            organizationId: parseInt(user.OrganizationId),
+            status: 0 // Default to Planned
+        };
         await authenticatedFetch(`${config.public.apiBase}/events`, {
             method: 'POST',
             body: JSON.stringify(payload)
@@ -314,7 +415,10 @@ const deleteEvent = async (id) => {
 
 // Dienst Logik
 const openDetails = async (event) => {
-    selectedEvent.value = { ...event };
+    selectedEvent.value = { 
+        ...event,
+        status: normalizeStatus(event.status !== undefined ? event.status : event.Status)
+    };
     currentShifts.value = [];
     resetShiftForm();
 
@@ -338,7 +442,10 @@ const openDetails = async (event) => {
             }
         }
 
-        selectedEvent.value = data;
+        selectedEvent.value = {
+            ...data,
+            status: normalizeStatus(data.status !== undefined ? data.status : data.Status)
+        };
         currentShifts.value = shiftsWithHelpers;
 
     } catch (error) {

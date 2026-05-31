@@ -28,8 +28,17 @@
           <span class="rounded-xl bg-indigo-50 px-3 py-1 text-sm text-indigo-600">
             {{ helperLabel }}
           </span>
-          <span class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">
-            Einsatz
+          <span v-if="normalizedStatus === 3" class="rounded-xl bg-red-50 border border-red-200 px-3 py-1 text-sm font-semibold text-red-600">
+            Abgesagt
+          </span>
+          <span v-else-if="normalizedStatus === 2" class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-600">
+            Durchgeführt
+          </span>
+          <span v-else-if="normalizedStatus === 1" class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600">
+            Findet statt
+          </span>
+          <span v-else class="rounded-xl bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-500">
+            Geplant
           </span>
         </div>
       </div>
@@ -130,6 +139,27 @@ const interestedShiftIds = reactive(new Set(props.initialInterestedShiftIds))
 const submittingShiftIds = reactive(new Set())
 
 const interestedCount = computed(() => interestedShiftIds.size)
+
+const normalizedStatus = computed(() => {
+  const statusVal = props.event.eventStatus !== undefined ? props.event.eventStatus :
+                    props.event.EventStatus !== undefined ? props.event.EventStatus :
+                    props.event.status !== undefined ? props.event.status :
+                    props.event.Status;
+  
+  if (statusVal === undefined || statusVal === null) return 0;
+  if (typeof statusVal === 'number') return statusVal;
+  
+  const parsed = parseInt(statusVal);
+  if (!isNaN(parsed)) return parsed;
+  
+  const statusMap = {
+    'Planned': 0,
+    'TakePlace': 1,
+    'Accomplished': 2,
+    'Canceled': 3
+  };
+  return statusMap[statusVal] !== undefined ? statusMap[statusVal] : 0;
+})
 
 const imageUrl = computed(() =>
   `https://picsum.photos/seed/event-${props.event.id}/300/300`
