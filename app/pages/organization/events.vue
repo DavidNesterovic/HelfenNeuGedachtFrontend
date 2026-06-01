@@ -369,23 +369,34 @@ const updateEventStatus = async () => {
     if (!selectedEvent.value) return;
     isUpdatingStatus.value = true;
     try {
+        const user = getUserInfo();
+        const orgId = selectedEvent.value.organizationId || parseInt(user?.OrganizationId ?? "0");
+        const rawStatus = selectedEvent.value.eventStatus !== undefined ? selectedEvent.value.eventStatus : selectedEvent.value.status;
+        const normalizedStatusVal = normalizeStatus(rawStatus);
+
         const payload = {
             id: selectedEvent.value.id,
-            title: selectedEvent.value.title,
-            description: selectedEvent.value.description,
-            location: selectedEvent.value.location,
+            title: selectedEvent.value.title || "Unbenannt",
+            description: selectedEvent.value.description || "Keine Beschreibung vorhanden.",
+            location: selectedEvent.value.location || "Keine Angabe",
             startDate: selectedEvent.value.startDate,
-            endDate: selectedEvent.value.endDate,
-            organizationId: selectedEvent.value.organizationId,
-            eventStatus: parseInt(selectedEvent.value.eventStatus)
+            endDate: selectedEvent.value.endDate || selectedEvent.value.startDate,
+            organizationId: orgId,
+            eventStatus: normalizedStatusVal
         };
         
-        await authenticatedFetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
+        const response = await authenticatedFetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
             method: 'PUT',
             body: JSON.stringify(payload)
         });
         
-        await loadEvents();
+        if (response && !response.ok) {
+            const errText = await response.text().catch(() => "");
+            console.error("API error status:", response.status, errText);
+            alert(`Fehler beim Aktualisieren des Event-Status: Server meldet Status ${response.status}.`);
+        } else {
+            await loadEvents();
+        }
     } catch (error) {
         alert("Fehler beim Aktualisieren des Event-Status.");
         console.error(error);

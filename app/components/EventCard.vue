@@ -1,17 +1,19 @@
 <template>
   <div class="rounded-[28px] bg-white p-5 shadow-sm">
     <div class="flex flex-col sm:flex-row gap-4">
-      <div class="relative h-48 sm:h-28 w-full sm:w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
+      <NuxtLink :to="`/event/${event.id}`" class="relative h-48 sm:h-28 w-full sm:w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-200 block hover:opacity-95 transition-opacity">
         <img
           :src="imageUrl"
           :alt="event.title"
           class="h-full w-full object-cover"
         >
-      </div>
+      </NuxtLink>
 
       <div class="min-w-0 flex-1">
         <h3 class="text-lg sm:text-[20px] leading-tight font-medium text-slate-900 break-words">
-          {{ event.title }}
+          <NuxtLink :to="`/event/${event.id}`" class="hover:text-blue-600 hover:underline">
+            {{ event.title }}
+          </NuxtLink>
         </h3>
 
         <p class="mt-2 text-base sm:text-[17px] text-indigo-600 break-words">
