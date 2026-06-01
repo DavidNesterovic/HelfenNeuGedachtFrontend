@@ -30,10 +30,11 @@
     </template>
 
     <div v-else class="mt-5 space-y-3">
-      <div
+      <NuxtLink
         v-for="p in interestedParticipations"
         :key="p.shiftId"
-        class="rounded-[28px] bg-white p-5 shadow-sm"
+        :to="p.eventId ? `/event/${p.eventId}` : '#'"
+        class="block rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
       >
         <div class="flex gap-4">
           <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
@@ -57,7 +58,7 @@
             Vorgemerkt
           </span>
         </div>
-      </div>
+      </NuxtLink>
     </div>
   </div>
 </template>

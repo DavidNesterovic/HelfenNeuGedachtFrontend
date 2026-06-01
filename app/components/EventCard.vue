@@ -87,6 +87,15 @@
               <span v-if="shift.points" class="text-xs text-amber-600 font-medium">
                 +{{ shift.points }} Pkt.
               </span>
+              <span
+                v-if="shift.difficulty != null"
+                :class="[
+                  'text-xs font-medium px-1.5 py-0.5 rounded-md',
+                  shift.difficulty === 2 ? 'bg-red-50 text-red-600' :
+                  shift.difficulty === 1 ? 'bg-amber-50 text-amber-600' :
+                  'bg-green-50 text-green-600'
+                ]"
+              >{{ ['Einfach','Mittel','Schwer'][shift.difficulty] ?? 'Einfach' }}</span>
               <span v-if="shift.requiredHelpers" class="text-xs text-slate-400">
                 {{ shift.requiredHelpers }} Helfer gesucht
               </span>

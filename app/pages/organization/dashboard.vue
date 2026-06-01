@@ -243,8 +243,6 @@ const loadDashboardData = async () => {
   if (!process.client) return;
 
   const userInfo = getUserInfo();
-  console.log(userInfo.OrganizationId);
-  
   try {
     const headers = { Authorization: getAuthHeader() };
     
