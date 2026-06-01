@@ -159,12 +159,34 @@
     <div class="mt-6">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Präferenzen</h2>
       <div class="rounded-2xl bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center gap-3 px-4 py-3.5 border-b border-slate-50">
-          <svg viewBox="0 0 24 24" class="h-5 w-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z" />
-          </svg>
-          <span class="flex-1 text-[14px] text-slate-700">Interessengebiete</span>
-          <span class="text-[13px] text-indigo-500">Sport, Kultur +2</span>
+        <div>
+          <button
+            type="button"
+            class="w-full flex items-center gap-3 px-4 py-3.5 border-b border-slate-50 text-left"
+            @click="showCategoryPicker = !showCategoryPicker"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z" />
+            </svg>
+            <span class="flex-1 text-[14px] text-slate-700">Interessengebiete</span>
+            <span class="text-[13px] text-indigo-500">
+              {{ categoryPreferenceLabel }}
+            </span>
+          </button>
+          <div v-if="showCategoryPicker" class="px-4 py-3 border-b border-slate-50 flex flex-wrap gap-2">
+            <button
+              v-for="cat in allCategories"
+              :key="cat.id"
+              type="button"
+              @click="toggleCategoryPreference(cat.id)"
+              :class="[
+                'px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors',
+                selectedCategoryIds.includes(cat.id)
+                  ? 'bg-indigo-500 text-white border-indigo-500'
+                  : 'bg-slate-50 text-slate-600 border-slate-200'
+              ]"
+            >{{ cat.name }}</button>
+          </div>
         </div>
         <div class="flex items-center gap-3 px-4 py-3.5 border-b border-slate-50">
           <svg viewBox="0 0 24 24" class="h-5 w-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -310,12 +332,54 @@ const rewards = [
 
 const handleLogout = () => logout()
 
+const allCategories = ref([])
+const selectedCategoryIds = ref([])
+const showCategoryPicker = ref(false)
+
+const categoryPreferenceLabel = computed(() => {
+  if (selectedCategoryIds.value.length === 0) return 'Keine'
+  const names = allCategories.value
+    .filter(c => selectedCategoryIds.value.includes(c.id))
+    .map(c => c.name)
+  if (names.length <= 2) return names.join(', ')
+  return `${names.slice(0, 2).join(', ')} +${names.length - 2}`
+})
+
+const toggleCategoryPreference = async (id) => {
+  const idx = selectedCategoryIds.value.indexOf(id)
+  if (idx === -1) selectedCategoryIds.value.push(id)
+  else selectedCategoryIds.value.splice(idx, 1)
+
+  try {
+    await $fetch(`${config.public.apiBase}/users/preferences`, {
+      method: 'PUT',
+      headers: { Authorization: getAuthHeader() },
+      body: selectedCategoryIds.value,
+    })
+  } catch (e) {
+    console.error('Fehler beim Speichern der Präferenzen:', e)
+    if (idx === -1) selectedCategoryIds.value.pop()
+    else selectedCategoryIds.value.splice(idx, 0, id)
+  }
+}
+
 onMounted(async () => {
   try {
-    const res = await $fetch(`${config.public.apiBase}/Participation/user`, {
-      headers: { Authorization: getAuthHeader() },
-    })
-    participations.value = res || []
+    const [participationsRes, categoriesRes, preferencesRes] = await Promise.allSettled([
+      $fetch(`${config.public.apiBase}/Participation/user`, {
+        headers: { Authorization: getAuthHeader() },
+      }),
+      $fetch(`${config.public.apiBase}/categories`),
+      $fetch(`${config.public.apiBase}/users/preferences`, {
+        headers: { Authorization: getAuthHeader() },
+      }),
+    ])
+
+    if (participationsRes.status === 'fulfilled') participations.value = participationsRes.value || []
+    if (categoriesRes.status === 'fulfilled') allCategories.value = categoriesRes.value || []
+    if (preferencesRes.status === 'fulfilled') {
+      selectedCategoryIds.value = (preferencesRes.value || []).map(c => c.id)
+    }
   } catch (e) {
     console.error(e)
   } finally {

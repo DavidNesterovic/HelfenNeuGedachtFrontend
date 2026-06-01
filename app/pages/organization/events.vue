@@ -174,6 +174,23 @@
                             <input v-model.number="shiftForm.points" type="number" name="points" placeholder="Punkte"
                                 class="border p-2 rounded shadow-sm outline-none" />
                         </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategorien</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    v-for="cat in availableCategories"
+                                    :key="cat.id"
+                                    type="button"
+                                    @click="toggleShiftCategory(cat.id)"
+                                    :class="[
+                                        'px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                                        shiftForm.categoryIds.includes(cat.id)
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                                    ]"
+                                >{{ cat.name }}</button>
+                            </div>
+                        </div>
                         <div class="flex gap-2">
                             <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">{{
                                 shiftForm.id ? 'Aktualisieren' : 'Dienst speichern' }}</button>
@@ -188,6 +205,12 @@
                             <div>
                                 <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
                                 <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
+                                <div v-if="shift.categories?.length" class="flex flex-wrap gap-1 mt-1">
+                                    <span v-for="cat in shift.categories" :key="cat.id"
+                                        class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-100">
+                                        {{ cat.name }}
+                                    </span>
+                                </div>
                                 <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
                                     <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
 
@@ -277,11 +300,18 @@ const isSubmitting = ref(false);
 const showForm = ref(false);
 const selectedEvent = ref(null);
 const currentShifts = ref([]);
+const availableCategories = ref([]);
 
 // Form-States
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '', description: '' });
 const showShiftForm = ref(false);
-const shiftForm = ref({ id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0 });
+const shiftForm = ref({ id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0, categoryIds: [] });
+
+const toggleShiftCategory = (id) => {
+    const idx = shiftForm.value.categoryIds.indexOf(id);
+    if (idx === -1) shiftForm.value.categoryIds.push(id);
+    else shiftForm.value.categoryIds.splice(idx, 1);
+};
 
 const minDateTime = computed(() => new Date().toISOString().slice(0, 16));
 
@@ -488,11 +518,14 @@ const openDetails = async (event) => {
 
 const resetShiftForm = () => {
     showShiftForm.value = false;
-    shiftForm.value = { id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0 };
+    shiftForm.value = { id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0, categoryIds: [] };
 };
 
 const editShift = (shift) => {
-    shiftForm.value = { ...shift };
+    shiftForm.value = {
+        ...shift,
+        categoryIds: (shift.categories ?? []).map(c => c.id),
+    };
     showShiftForm.value = true;
 };
 
@@ -571,7 +604,18 @@ const updateHelperStatus = async (helper, status) => {
 const confirmHelper = (helper) => updateHelperStatus(helper, 1)
 const rejectHelper = (helper) => updateHelperStatus(helper, 3)
 
-onMounted(() => loadEvents());
+const loadCategories = async () => {
+    try {
+        availableCategories.value = await $fetch(`${config.public.apiBase}/categories`);
+    } catch (e) {
+        console.error('Fehler beim Laden der Kategorien:', e);
+    }
+};
+
+onMounted(() => {
+    loadEvents();
+    loadCategories();
+});
 </script>
 
 <style scoped>

@@ -29,11 +29,11 @@
     <div class="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
       <FilterChip
         v-for="c in categories"
-        :key="c.key"
-        :active="filters.category === c.key"
-        @click="toggleCategory(c.key)"
+        :key="c.id"
+        :active="filters.category === c.id"
+        @click="toggleCategory(c.id)"
       >
-        {{ c.label }}
+        {{ c.name }}
       </FilterChip>
     </div>
 
@@ -95,13 +95,7 @@ const quickFilters = [
   { key: 'short', label: 'Kurze Einsätze (<2h)' },
 ]
 
-const categories = [
-  { key: 'sport', label: 'Sport' },
-  { key: 'culture', label: 'Kultur' },
-  { key: 'social', label: 'Soziales' },
-  { key: 'children', label: 'Kinder' },
-  { key: 'logistics', label: 'Logistik' },
-]
+const categories = ref([])
 
 const pending = ref(true)
 const error = ref(false)
@@ -112,8 +106,8 @@ const toggleQuickFilter = (key) => {
   filters.value.quickFilter = filters.value.quickFilter === key ? null : key
 }
 
-const toggleCategory = (key) => {
-  filters.value.category = filters.value.category === key ? null : key
+const toggleCategory = (id) => {
+  filters.value.category = filters.value.category === id ? null : id
 }
 
 const filteredEvents = computed(() => {
@@ -150,6 +144,14 @@ const filteredEvents = computed(() => {
     })
   }
 
+  if (filters.value.category !== null) {
+    result = result.filter(e =>
+      (e.shifts ?? []).some(s =>
+        (s.categories ?? []).some(c => c.id === filters.value.category)
+      )
+    )
+  }
+
   return result
 })
 
@@ -157,11 +159,12 @@ const loadEvents = async () => {
   pending.value = true
   error.value = false
   try {
-    const [eventsRes, participationsRes] = await Promise.allSettled([
+    const [eventsRes, participationsRes, categoriesRes] = await Promise.allSettled([
       $fetch(`${config.public.apiBase}/Events`),
       $fetch(`${config.public.apiBase}/Participation/user`, {
         headers: { Authorization: getAuthHeader() },
       }),
+      $fetch(`${config.public.apiBase}/categories`),
     ])
 
     if (eventsRes.status === 'fulfilled') {
@@ -177,6 +180,10 @@ const loadEvents = async () => {
           .map(p => p.shiftId)
           .filter(Boolean)
       )
+    }
+
+    if (categoriesRes.status === 'fulfilled') {
+      categories.value = categoriesRes.value || []
     }
   } finally {
     pending.value = false

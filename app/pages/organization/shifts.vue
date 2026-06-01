@@ -31,7 +31,13 @@
                         </div>
                         <h2 class="text-xl font-bold text-gray-800">{{ shift.name }}</h2>
                     </div>
-                    <p class="text-gray-600 mb-6 line-clamp-2 text-sm">{{ shift.description }}</p>
+                    <p class="text-gray-600 mb-3 line-clamp-2 text-sm">{{ shift.description }}</p>
+                    <div v-if="shift.categories?.length" class="flex flex-wrap gap-1 mb-4">
+                        <span v-for="cat in shift.categories" :key="cat.id"
+                            class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold border border-blue-100">
+                            {{ cat.name }}
+                        </span>
+                    </div>
                     <button @click="openEditModal(shift)"
                         class="w-full bg-gray-50 hover:bg-blue-50 text-blue-600 font-semibold py-2 rounded-lg border border-blue-100 transition-colors">
                         Details / Bearbeiten
@@ -91,6 +97,24 @@
                             </select>
                         </div>
 
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Kategorien</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    v-for="cat in availableCategories"
+                                    :key="cat.id"
+                                    type="button"
+                                    @click="toggleShiftCategory(cat.id)"
+                                    :class="[
+                                        'px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                                        shiftForm.categoryIds.includes(cat.id)
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                                    ]"
+                                >{{ cat.name }}</button>
+                            </div>
+                        </div>
+
                         <div class="flex gap-3 pt-4">
                             <button type="submit"
                                 class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Speichern</button>
@@ -111,9 +135,10 @@ import { getAuthHeader, logout, authenticatedFetch } from '../../assets/utils/au
 
 definePageMeta({ middleware: 'auth' })
 
-const isLoading = ref(true); 
+const isLoading = ref(true);
 const shifts = ref([]);
 const events = ref([]);
+const availableCategories = ref([]);
 const config = useRuntimeConfig();
 
 // Modal & Form State
@@ -128,8 +153,15 @@ const shiftForm = ref({
     requirements: '',
     ageRestriction: 0,
     points: 10,
-    eventId: ''
+    eventId: '',
+    categoryIds: []
 });
+
+const toggleShiftCategory = (id) => {
+    const idx = shiftForm.value.categoryIds.indexOf(id);
+    if (idx === -1) shiftForm.value.categoryIds.push(id);
+    else shiftForm.value.categoryIds.splice(idx, 1);
+};
 
 const loadData = async () => {
     if (!process.client) return;
@@ -137,13 +169,15 @@ const loadData = async () => {
     isLoading.value = true;
     try {
         const headers = { Authorization: getAuthHeader() };
-        const [shiftsRes, eventsRes] = await Promise.all([
+        const [shiftsRes, eventsRes, categoriesRes] = await Promise.all([
             $fetch(`${config.public.apiBase}/shifts`, { headers }),
-            $fetch(`${config.public.apiBase}/events`, { headers })
+            $fetch(`${config.public.apiBase}/events`, { headers }),
+            $fetch(`${config.public.apiBase}/categories`)
         ]);
 
         shifts.value = shiftsRes;
         events.value = eventsRes;
+        availableCategories.value = categoriesRes;
     } catch (error) {
         console.error("Fehler beim Laden der Daten:", error);
         if (error.status === 401) logout();
@@ -157,12 +191,15 @@ onMounted(() => {
 });
 
 const openCreateModal = () => {
-    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, points: 10, eventId: '' };
+    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, points: 10, eventId: '', categoryIds: [] };
     isCreateModalOpen.value = true;
 };
 
 const openEditModal = (shift) => {
-    shiftForm.value = { ...shift };
+    shiftForm.value = {
+        ...shift,
+        categoryIds: (shift.categories ?? []).map(c => c.id),
+    };
     isEditModalOpen.value = true;
 };
 
