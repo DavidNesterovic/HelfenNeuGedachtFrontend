@@ -57,7 +57,8 @@
               <button @click.stop="cancelParticipation(p)" class="text-sm text-slate-400 hover:text-red-500 transition-colors">
                 Absagen
               </button>
-              <span class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">Angemeldet</span>
+              <span v-if="p.status === 4" class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-1 text-sm font-semibold text-amber-600">Ausstehend</span>
+              <span v-else class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">Angemeldet</span>
             </div>
           </div>
         </div>
@@ -154,9 +155,9 @@ const config = useRuntimeConfig()
 const pending = ref(true)
 const participations = ref([])
 
-// Backend enum: Interested=0, Confirmed=1, Completed=2, Canceled=3
+// Backend enum: Interested=0, Confirmed=1, Completed=2, Canceled=3, Applied=4
 const confirmedParticipations = computed(() =>
-  participations.value.filter(p => p.status === 1)
+  participations.value.filter(p => p.status === 1 || p.status === 4)
 )
 
 const completedParticipations = computed(() =>

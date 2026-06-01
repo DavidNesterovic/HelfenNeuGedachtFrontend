@@ -5,7 +5,10 @@
     </div>
 
     <div class="mt-4">
-      <div class="rounded-2xl bg-slate-100 px-4 py-3">
+      <div class="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-300 focus-within:ring-2 focus-within:ring-blue-400 transition">
+        <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
         <input
           v-model="filters.search"
           type="text"
@@ -15,7 +18,7 @@
       </div>
     </div>
 
-    <div class="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+    <div class="mt-3 flex gap-2 overflow-x-auto px-1 pt-1 pb-2 scrollbar-hide">
       <FilterChip
         v-for="f in quickFilters"
         :key="f.key"
@@ -26,7 +29,7 @@
       </FilterChip>
     </div>
 
-    <div class="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+    <div class="flex gap-2 overflow-x-auto px-1 pt-1 pb-2 scrollbar-hide">
       <FilterChip
         v-for="c in categories"
         :key="c.id"
@@ -37,7 +40,7 @@
       </FilterChip>
     </div>
 
-    <div class="mt-5 space-y-3">
+    <div class="mt-4 space-y-3">
       <div
         v-if="pending"
         class="rounded-3xl bg-white p-5 text-sm text-slate-400 shadow-sm"
@@ -65,6 +68,8 @@
           :key="event.id"
           :event="event"
           :initialInterestedShiftIds="(event.shifts ?? []).filter(s => interestedShiftIds.has(s.id)).map(s => s.id)"
+          :initialAppliedShiftIds="(event.shifts ?? []).filter(s => appliedShiftIds.has(s.id)).map(s => s.id)"
+          :initialConfirmedShiftIds="(event.shifts ?? []).filter(s => confirmedShiftIds.has(s.id)).map(s => s.id)"
         />
       </template>
     </div>
@@ -101,6 +106,8 @@ const pending = ref(true)
 const error = ref(false)
 const events = ref([])
 const interestedShiftIds = ref(new Set())
+const appliedShiftIds = ref(new Set())
+const confirmedShiftIds = ref(new Set())
 
 const toggleQuickFilter = (key) => {
   filters.value.quickFilter = filters.value.quickFilter === key ? null : key
@@ -174,12 +181,10 @@ const loadEvents = async () => {
     }
 
     if (participationsRes.status === 'fulfilled') {
-      interestedShiftIds.value = new Set(
-        (participationsRes.value || [])
-          .filter(p => p.status === 0)
-          .map(p => p.shiftId)
-          .filter(Boolean)
-      )
+      const parts = participationsRes.value || []
+      interestedShiftIds.value = new Set(parts.filter(p => p.status === 0).map(p => p.shiftId).filter(Boolean))
+      appliedShiftIds.value = new Set(parts.filter(p => p.status === 4).map(p => p.shiftId).filter(Boolean))
+      confirmedShiftIds.value = new Set(parts.filter(p => p.status === 1).map(p => p.shiftId).filter(Boolean))
     }
 
     if (categoriesRes.status === 'fulfilled') {

@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-[28px] bg-white p-5 shadow-sm">
+  <div class="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-300">
     <div class="flex flex-col sm:flex-row gap-4">
       <NuxtLink :to="`/event/${event.id}`" class="relative h-48 sm:h-28 w-full sm:w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-200 block hover:opacity-95 transition-opacity">
         <img
@@ -60,6 +60,9 @@
           <span v-if="interestedCount > 0" class="text-xs font-medium text-blue-600">
             · {{ interestedCount }} vorgemerkt
           </span>
+          <span v-if="appliedCount > 0" class="text-xs font-medium text-amber-600">
+            · {{ appliedCount }} angemeldet
+          </span>
         </div>
         <svg
           viewBox="0 0 24 24"
@@ -101,28 +104,48 @@
               </span>
             </div>
           </div>
-          <button
-            type="button"
-            :disabled="submittingShiftIds.has(shift.id)"
-            class="shrink-0 rounded-full p-1 transition disabled:opacity-40"
-            @click="toggleShiftInterest(shift.id)"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              class="h-6 w-6 transition"
-              :class="interestedShiftIds.has(shift.id)
-                ? 'fill-blue-500 text-blue-500'
-                : 'fill-none text-slate-400'"
-              stroke="currentColor"
-              stroke-width="1.8"
+
+          <!-- Status badge when already registered or confirmed -->
+          <span v-if="confirmedShiftIds.has(shift.id)" class="shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-600">
+            Bestätigt
+          </span>
+          <span v-else-if="appliedShiftIds.has(shift.id)" class="shrink-0 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-semibold text-amber-600">
+            Ausstehend
+          </span>
+
+          <!-- Register + bookmark buttons when not yet applied -->
+          <div v-else class="shrink-0 flex items-center gap-1.5">
+            <button
+              type="button"
+              :disabled="submittingShiftIds.has(shift.id)"
+              class="rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition disabled:opacity-40"
+              @click="applyForShift(shift.id)"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
-          </button>
+              Anmelden
+            </button>
+            <button
+              type="button"
+              :disabled="submittingShiftIds.has(shift.id)"
+              class="rounded-full p-1 transition disabled:opacity-40"
+              @click="toggleShiftInterest(shift.id)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-6 w-6 transition"
+                :class="interestedShiftIds.has(shift.id)
+                  ? 'fill-blue-500 text-blue-500'
+                  : 'fill-none text-slate-400'"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -141,28 +164,39 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  initialAppliedShiftIds: {
+    type: Array,
+    default: () => [],
+  },
+  initialConfirmedShiftIds: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const config = useRuntimeConfig()
 const showShifts = ref(false)
 
 const interestedShiftIds = reactive(new Set(props.initialInterestedShiftIds))
+const appliedShiftIds = reactive(new Set(props.initialAppliedShiftIds))
+const confirmedShiftIds = reactive(new Set(props.initialConfirmedShiftIds))
 const submittingShiftIds = reactive(new Set())
 
 const interestedCount = computed(() => interestedShiftIds.size)
+const appliedCount = computed(() => appliedShiftIds.size)
 
 const normalizedStatus = computed(() => {
   const statusVal = props.event.eventStatus !== undefined ? props.event.eventStatus :
                     props.event.EventStatus !== undefined ? props.event.EventStatus :
                     props.event.status !== undefined ? props.event.status :
                     props.event.Status;
-  
+
   if (statusVal === undefined || statusVal === null) return 0;
   if (typeof statusVal === 'number') return statusVal;
-  
+
   const parsed = parseInt(statusVal);
   if (!isNaN(parsed)) return parsed;
-  
+
   const statusMap = {
     'Planned': 0,
     'TakePlace': 1,
@@ -214,7 +248,6 @@ const toggleShiftInterest = async (shiftId) => {
 
   const wasInterested = interestedShiftIds.has(shiftId)
 
-  // Optimistic update
   if (wasInterested) {
     interestedShiftIds.delete(shiftId)
   } else {
@@ -226,19 +259,39 @@ const toggleShiftInterest = async (shiftId) => {
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'POST',
       headers: { Authorization: getAuthHeader() },
-      params: {
-        shiftId,
-        status: 0,
-      },
+      params: { shiftId, status: 0 },
     })
   } catch (e) {
     console.error('Participation request failed:', e)
-    // Revert on error
     if (wasInterested) {
       interestedShiftIds.add(shiftId)
     } else {
       interestedShiftIds.delete(shiftId)
     }
+  } finally {
+    submittingShiftIds.delete(shiftId)
+  }
+}
+
+const applyForShift = async (shiftId) => {
+  if (submittingShiftIds.has(shiftId)) return
+
+  const wasInterested = interestedShiftIds.has(shiftId)
+
+  interestedShiftIds.delete(shiftId)
+  appliedShiftIds.add(shiftId)
+  submittingShiftIds.add(shiftId)
+
+  try {
+    await $fetch(`${config.public.apiBase}/Participation`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader() },
+      params: { shiftId, status: 4 },
+    })
+  } catch (e) {
+    console.error('Apply request failed:', e)
+    appliedShiftIds.delete(shiftId)
+    if (wasInterested) interestedShiftIds.add(shiftId)
   } finally {
     submittingShiftIds.delete(shiftId)
   }

@@ -1,10 +1,10 @@
 <template>
   <button
       type="button"
-      class="whitespace-nowrap rounded-full border px-4 py-2 text-sm transition"
+      class="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition"
       :class="active
-      ? 'border-transparent bg-slate-200 text-slate-800'
-      : 'border-slate-300 bg-white text-slate-700'"
+      ? 'bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-1'
+      : 'bg-white text-slate-600 ring-1 ring-slate-300 hover:ring-slate-400'"
   >
     <slot />
   </button>
