@@ -94,6 +94,8 @@
                                 <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                     <button @click="openDetails(event)"
                                         class="text-blue-600 hover:text-blue-800">Details</button>
+                                    <button @click="openEdit(event)"
+                                        class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
                                     <button @click="deleteEvent(event.id)"
                                         class="text-red-500 hover:text-red-700">Löschen</button>
                                 </div>
@@ -285,6 +287,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Edit Event Modal -->
+        <div v-if="editingEvent"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-900">Veranstaltung bearbeiten</h2>
+                    <button @click="editingEvent = null" class="text-gray-400 hover:text-gray-600">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="p-6 overflow-y-auto flex-1">
+                    <form @submit.prevent="updateEvent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col md:col-span-2">
+                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
+                            <input v-model="editForm.title" placeholder="Sommerfest"
+                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                        <div class="flex flex-col md:col-span-2">
+                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Beschreibung</label>
+                            <textarea v-model="editForm.description" rows="3"
+                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                required></textarea>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
+                            <input v-model="editForm.location" placeholder="Marktplatz"
+                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex flex-col">
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
+                                <input v-model="editForm.startDate" type="datetime-local" :min="minDateTime"
+                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    required />
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
+                                <input v-model="editForm.endDate" type="datetime-local"
+                                    :min="editForm.startDate || minDateTime"
+                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    required />
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:col-span-2">
+                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
+                            <select 
+                                v-model="editForm.eventStatus" 
+                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                            >
+                                <option :value="0">Geplant</option>
+                                <option :value="1">Findet statt</option>
+                                <option :value="2">Durchgeführt</option>
+                                <option :value="3">Abgesagt</option>
+                            </select>
+                        </div>
+                        
+                        <div class="md:col-span-2 flex gap-4 mt-2">
+                            <button type="submit" :disabled="isUpdatingEvent"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
+                                {{ isUpdatingEvent ? 'Wird gespeichert...' : 'Änderungen speichern' }}
+                            </button>
+                            <button type="button" @click="editingEvent = null"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-lg font-bold transition-colors">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -306,6 +383,11 @@ const availableCategories = ref([]);
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '', description: '' });
 const showShiftForm = ref(false);
 const shiftForm = ref({ id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0, categoryIds: [] });
+
+// Edit-States
+const editingEvent = ref(null);
+const editForm = ref({ title: '', location: '', startDate: '', endDate: '', description: '', eventStatus: 0 });
+const isUpdatingEvent = ref(false);
 
 const toggleShiftCategory = (id) => {
     const idx = shiftForm.value.categoryIds.indexOf(id);
@@ -484,6 +566,57 @@ const deleteEvent = async (id) => {
         await loadEvents();
     } catch (error) {
         alert("Fehler beim Löschen.");
+    }
+};
+
+const formatForDateTimeInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16);
+};
+
+const openEdit = (event) => {
+    editingEvent.value = { ...event };
+    editForm.value = {
+        title: event.title || '',
+        description: event.description || '',
+        location: event.location || '',
+        startDate: formatForDateTimeInput(event.startDate),
+        endDate: formatForDateTimeInput(event.endDate),
+        eventStatus: normalizeStatus(event.eventStatus)
+    };
+};
+
+const updateEvent = async () => {
+    if (!editingEvent.value) return;
+    isUpdatingEvent.value = true;
+    try {
+        const payload = {
+            id: editingEvent.value.id,
+            title: editForm.value.title,
+            description: editForm.value.description,
+            location: editForm.value.location,
+            startDate: editForm.value.startDate,
+            endDate: editForm.value.endDate,
+            organizationId: editingEvent.value.organizationId,
+            eventStatus: parseInt(editForm.value.eventStatus)
+        };
+        
+        await authenticatedFetch(`${config.public.apiBase}/events/${editingEvent.value.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+        
+        editingEvent.value = null;
+        await loadEvents();
+    } catch (error) {
+        alert("Fehler beim Aktualisieren des Events.");
+        console.error(error);
+    } finally {
+        isUpdatingEvent.value = false;
     }
 };
 
