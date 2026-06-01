@@ -52,14 +52,17 @@
                         </select>
                     </div>
 
-                    <div class="flex items-center h-[42px] px-2">
+                    <div class="flex items-center h-[42px] px-2 shrink-0">
                         <label class="inline-flex items-center cursor-pointer select-none">
-                            <input 
-                                v-model="showUpcomingOnly" 
-                                type="checkbox" 
-                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 transition"
-                            />
-                            <span class="ml-2 text-sm font-semibold text-gray-600">Nur Dienste von <br />bevorstehenden Veranstaltungen</span>
+                            <div class="relative">
+                                <input 
+                                    v-model="showUpcomingOnly" 
+                                    type="checkbox" 
+                                    class="sr-only peer"
+                                />
+                                <div class="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                            <span class="ml-3 text-sm font-semibold text-gray-600">Nur bevorstehende Veranstaltungen</span>
                         </label>
                     </div>
 
@@ -67,9 +70,6 @@
                         @click="resetFilters"
                         class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center gap-2 h-[42px] shrink-0"
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
-                        </svg>
                         Zurücksetzen
                     </button>
                 </div>
@@ -247,7 +247,7 @@
 </template>
 
 <script setup>
-import { getAuthHeader, logout, authenticatedFetch } from '../../assets/utils/auth';
+import { getAuthHeader, logout, authenticatedFetch, getUserInfo } from '../../assets/utils/auth';
 
 definePageMeta({ middleware: 'auth' })
 
@@ -260,7 +260,7 @@ const config = useRuntimeConfig();
 // Search & Filter State
 const searchQuery = ref('');
 const selectedEventFilterId = ref('');
-const showUpcomingOnly = ref(false);
+const showUpcomingOnly = ref(true);
 
 const getEventName = (eventId) => {
     const ev = events.value.find(e => e.id === eventId);
@@ -327,7 +327,7 @@ watch(showUpcomingOnly, (newVal) => {
 const resetFilters = () => {
     searchQuery.value = '';
     selectedEventFilterId.value = '';
-    showUpcomingOnly.value = false;
+    showUpcomingOnly.value = true;
 };
 
 // Modal & Form State
@@ -391,9 +391,10 @@ const loadData = async () => {
     isLoading.value = true;
     try {
         const headers = { Authorization: getAuthHeader() };
+        const userInfo = getUserInfo();
         const [shiftsRes, eventsRes, categoriesRes] = await Promise.all([
             $fetch(`${config.public.apiBase}/shifts`, { headers }),
-            $fetch(`${config.public.apiBase}/events`, { headers }),
+            $fetch(`${config.public.apiBase}/events/organization/${userInfo.OrganizationId}`, { headers }),
             $fetch(`${config.public.apiBase}/categories`)
         ]);
 
