@@ -48,7 +48,7 @@
             <div v-if="isCreateModalOpen || isEditModalOpen"
                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                 <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-                    <div class="p-6 border-b flex justify-between items-center">
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                         <h2 class="text-xl font-bold">{{ isEditModalOpen ? 'Dienst bearbeiten' : 'Neuen Dienst erstellen' }}</h2>
                         <button @click="isCreateModalOpen = false; isEditModalOpen = false"
                             class="text-gray-400 hover:text-gray-600">
@@ -76,15 +76,39 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Punkte</label>
-                                <input v-model.number="shiftForm.points" type="number"
-                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="1">
+                                <label class="block text-sm font-medium text-gray-700">Schwierigkeit</label>
+                                <select v-model.number="shiftForm.difficulty"
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2 bg-white">
+                                    <option :value="0">Einfach (10 Pkt/h)</option>
+                                    <option :value="1">Mittel (20 Pkt/h)</option>
+                                    <option :value="2">Schwer (30 Pkt/h)</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Alter</label>
                                 <input v-model.number="shiftForm.ageRestriction" type="number"
                                     class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="0">
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Schichtstart <span class="text-gray-400 font-normal">(opt.)</span></label>
+                                <input v-model="shiftForm.startTime" type="datetime-local"
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Schichtende <span class="text-gray-400 font-normal">(opt.)</span></label>
+                                <input v-model="shiftForm.endTime" type="datetime-local"
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2 text-sm">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-700 font-medium">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            {{ shiftPointsPreview }} Punkte ({{ shiftDifficultyLabel(shiftForm.difficulty) }} · {{ shiftDurationLabel }})
                         </div>
 
                         <div>
@@ -152,7 +176,9 @@ const shiftForm = ref({
     description: '',
     requirements: '',
     ageRestriction: 0,
-    points: 10,
+    difficulty: 0,
+    startTime: '',
+    endTime: '',
     eventId: '',
     categoryIds: []
 });
@@ -162,6 +188,37 @@ const toggleShiftCategory = (id) => {
     if (idx === -1) shiftForm.value.categoryIds.push(id);
     else shiftForm.value.categoryIds.splice(idx, 1);
 };
+
+const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[d] ?? 'Einfach');
+const shiftRatePerHour = (d) => ({ 0: 10, 1: 20, 2: 30 }[d] ?? 10);
+
+const selectedEventDates = computed(() => {
+    const ev = events.value.find(e => e.id === shiftForm.value.eventId);
+    return ev ? { start: ev.startDate, end: ev.endDate } : null;
+});
+
+const shiftDurationLabel = computed(() => {
+    const startRaw = shiftForm.value.startTime || selectedEventDates.value?.start;
+    const endRaw = shiftForm.value.endTime || selectedEventDates.value?.end;
+    if (!startRaw || !endRaw) return '–';
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
+    if (end <= start) return '–';
+    const h = (end - start) / (1000 * 60 * 60);
+    return h < 1 ? `${Math.round(h * 60)} Min` : `${Math.round(h * 10) / 10} Std`;
+});
+
+const shiftPointsPreview = computed(() => {
+    const rate = shiftRatePerHour(shiftForm.value.difficulty);
+    const startRaw = shiftForm.value.startTime || selectedEventDates.value?.start;
+    const endRaw = shiftForm.value.endTime || selectedEventDates.value?.end;
+    if (!startRaw || !endRaw) return '–';
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
+    if (end <= start) return '–';
+    const hours = (end - start) / (1000 * 60 * 60);
+    return Math.max(1, Math.round(hours * rate));
+});
 
 const loadData = async () => {
     if (!process.client) return;
@@ -190,14 +247,19 @@ onMounted(() => {
     loadData();
 });
 
+const toLocalDatetime = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : '';
+
 const openCreateModal = () => {
-    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, points: 10, eventId: '', categoryIds: [] };
+    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', eventId: '', categoryIds: [] };
     isCreateModalOpen.value = true;
 };
 
 const openEditModal = (shift) => {
     shiftForm.value = {
         ...shift,
+        difficulty: shift.difficulty ?? 0,
+        startTime: toLocalDatetime(shift.startTime),
+        endTime: toLocalDatetime(shift.endTime),
         categoryIds: (shift.categories ?? []).map(c => c.id),
     };
     isEditModalOpen.value = true;

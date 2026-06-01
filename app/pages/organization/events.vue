@@ -24,31 +24,31 @@
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
                             <input v-model="newEvent.title" placeholder="Sommerfest"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Beschreibung</label>
                             <textarea v-model="newEvent.description" rows="3"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                 required></textarea>
                         </div>
                         <div class="flex flex-col">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
                             <input v-model="newEvent.location" placeholder="Marktplatz"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
                                 <input v-model="newEvent.startDate" type="datetime-local" :min="minDateTime"
-                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
                                 <input v-model="newEvent.endDate" type="datetime-local"
                                     :min="newEvent.startDate || minDateTime"
-                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
                         </div>
@@ -113,7 +113,7 @@
         <div v-if="selectedEvent"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
-                <div class="p-6 border-b bg-gray-50">
+                <div class="p-6 border-b border-gray-200 bg-gray-50">
                     <div class="flex justify-between items-start mb-4">
                         <h2 class="text-2xl font-bold text-gray-900">{{ selectedEvent.title }}</h2>
                         <button @click="selectedEvent = null" class="text-gray-400 hover:text-gray-600">
@@ -137,24 +137,9 @@
                                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>{{ selectedEvent.location }}</span>
                     </div>
-                    <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-200/50 pt-3">
-                        <label class="text-xs font-bold text-gray-500 uppercase">Event-Status:</label>
-                        <select 
-                            v-model="selectedEvent.eventStatus" 
-                            @change="updateEventStatus"
-                            :disabled="isUpdatingStatus"
-                            class="border rounded-lg px-2.5 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none transition disabled:opacity-60 font-semibold"
-                        >
-                            <option :value="0">Geplant</option>
-                            <option :value="1">Findet statt</option>
-                            <option :value="2">Durchgeführt</option>
-                            <option :value="3">Abgesagt</option>
-                        </select>
-                        <span v-if="isUpdatingStatus" class="text-xs text-blue-600 animate-pulse font-medium">Wird aktualisiert...</span>
-                    </div>
                 </div>
 
-                <div class="p-6 overflow-y-auto flex-1">
+                <div class="px-6 overflow-y-auto flex-1">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-gray-800">Dienste</h3>
                         <button @click="showShiftForm = true" v-if="!showShiftForm"
@@ -165,16 +150,37 @@
 
                     <div v-if="showShiftForm" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-3">
                         <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst)"
-                            class="w-full border p-2 rounded shadow-sm outline-none" />
+                            class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none" />
                         <textarea v-model="shiftForm.description" placeholder="Beschreibung"
-                            class="w-full border p-2 rounded shadow-sm outline-none"></textarea>
+                            class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none"></textarea>
                         <div class="grid grid-cols-2 gap-2">
-                            <label for="helpers">Anzahl Helfer</label>
+                            <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer</label>
                             <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
-                                placeholder="Helfer Anzahl" class="border p-2 rounded shadow-sm outline-none" />
-                            <label for="points">Punkte</label>
-                            <input v-model.number="shiftForm.points" type="number" name="points" placeholder="Punkte"
-                                class="border p-2 rounded shadow-sm outline-none" />
+                                placeholder="Helfer Anzahl" class="border border-gray-200 p-2 rounded shadow-sm outline-none" />
+                            <label class="self-center text-sm text-gray-600">Schwierigkeitsgrad</label>
+                            <select v-model.number="shiftForm.difficulty" class="border border-gray-200 p-2 rounded shadow-sm outline-none bg-white">
+                                <option :value="0">Einfach (10 Pkt/h)</option>
+                                <option :value="1">Mittel (20 Pkt/h)</option>
+                                <option :value="2">Schwer (30 Pkt/h)</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-gray-500">Schichtstart <span class="text-gray-400">(optional)</span></label>
+                                <input v-model="shiftForm.startTime" type="datetime-local"
+                                    class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-gray-500">Schichtende <span class="text-gray-400">(optional)</span></label>
+                                <input v-model="shiftForm.endTime" type="datetime-local"
+                                    class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-700 font-medium">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            {{ shiftPointsPreview }} Punkte ({{ shiftDifficultyLabel(shiftForm.difficulty) }} · {{ shiftDurationLabel }})
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategorien</label>
@@ -203,7 +209,7 @@
 
                     <div class="space-y-3">
                         <div v-for="shift in currentShifts" :key="shift.id"
-                            class="flex justify-between items-center p-4 border rounded-xl hover:bg-gray-50 transition-colors">
+                            class="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                             <div>
                                 <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
                                 <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
@@ -292,7 +298,7 @@
         <div v-if="editingEvent"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
-                <div class="p-6 border-b bg-gray-50 flex justify-between items-center">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h2 class="text-xl font-bold text-gray-900">Veranstaltung bearbeiten</h2>
                     <button @click="editingEvent = null" class="text-gray-400 hover:text-gray-600">
                         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,31 +313,31 @@
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
                             <input v-model="editForm.title" placeholder="Sommerfest"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Beschreibung</label>
                             <textarea v-model="editForm.description" rows="3"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                 required></textarea>
                         </div>
                         <div class="flex flex-col">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
                             <input v-model="editForm.location" placeholder="Marktplatz"
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
                                 <input v-model="editForm.startDate" type="datetime-local" :min="minDateTime"
-                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
                                 <input v-model="editForm.endDate" type="datetime-local"
                                     :min="editForm.startDate || minDateTime"
-                                    class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
                         </div>
@@ -339,7 +345,7 @@
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
                             <select 
                                 v-model="editForm.eventStatus" 
-                                class="border p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
                             >
                                 <option :value="0">Geplant</option>
                                 <option :value="1">Findet statt</option>
@@ -382,7 +388,7 @@ const availableCategories = ref([]);
 // Form-States
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '', description: '' });
 const showShiftForm = ref(false);
-const shiftForm = ref({ id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0, categoryIds: [] });
+const shiftForm = ref({ id: null, name: '', description: '', requiredHelpers: 1, requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', categoryIds: [] });
 
 // Edit-States
 const editingEvent = ref(null);
@@ -394,6 +400,32 @@ const toggleShiftCategory = (id) => {
     if (idx === -1) shiftForm.value.categoryIds.push(id);
     else shiftForm.value.categoryIds.splice(idx, 1);
 };
+
+const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[d] ?? 'Einfach');
+const shiftRatePerHour = (d) => ({ 0: 10, 1: 20, 2: 30 }[d] ?? 10);
+
+const shiftDurationLabel = computed(() => {
+    const startRaw = shiftForm.value.startTime || selectedEvent.value?.startDate;
+    const endRaw = shiftForm.value.endTime || selectedEvent.value?.endDate;
+    if (!startRaw || !endRaw) return '–';
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
+    if (end <= start) return '–';
+    const h = (end - start) / (1000 * 60 * 60);
+    return h < 1 ? `${Math.round(h * 60)} Min` : `${Math.round(h * 10) / 10} Std`;
+});
+
+const shiftPointsPreview = computed(() => {
+    const rate = shiftRatePerHour(shiftForm.value.difficulty);
+    const startRaw = shiftForm.value.startTime || selectedEvent.value?.startDate;
+    const endRaw = shiftForm.value.endTime || selectedEvent.value?.endDate;
+    if (!startRaw || !endRaw) return '–';
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
+    if (end <= start) return '–';
+    const hours = (end - start) / (1000 * 60 * 60);
+    return Math.max(1, Math.round(hours * rate));
+});
 
 const minDateTime = computed(() => new Date().toISOString().slice(0, 16));
 
@@ -417,8 +449,6 @@ const normalizeStatus = (statusVal) => {
     };
     return statusMap[statusVal] !== undefined ? statusMap[statusVal] : 0;
 };
-
-const isUpdatingStatus = ref(false);
 
 const getStatusLabel = (status) => {
     const norm = normalizeStatus(status);
@@ -447,46 +477,6 @@ const getStatusBadgeClass = (status) => {
     }
 };
 
-const updateEventStatus = async () => {
-    if (!selectedEvent.value) return;
-    isUpdatingStatus.value = true;
-    try {
-        const user = getUserInfo();
-        const orgId = selectedEvent.value.organizationId || parseInt(user?.OrganizationId ?? "0");
-        const rawStatus = selectedEvent.value.eventStatus !== undefined ? selectedEvent.value.eventStatus : selectedEvent.value.status;
-        const normalizedStatusVal = normalizeStatus(rawStatus);
-
-        const payload = {
-            id: selectedEvent.value.id,
-            title: selectedEvent.value.title || "Unbenannt",
-            description: selectedEvent.value.description || "Keine Beschreibung vorhanden.",
-            location: selectedEvent.value.location || "Keine Angabe",
-            startDate: selectedEvent.value.startDate,
-            endDate: selectedEvent.value.endDate || selectedEvent.value.startDate,
-            organizationId: orgId,
-            eventStatus: normalizedStatusVal
-        };
-        
-        const response = await authenticatedFetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
-            method: 'PUT',
-            body: JSON.stringify(payload)
-        });
-        
-        if (response && !response.ok) {
-            const errText = await response.text().catch(() => "");
-            console.error("API error status:", response.status, errText);
-            alert(`Fehler beim Aktualisieren des Event-Status: Server meldet Status ${response.status}.`);
-        } else {
-            await loadEvents();
-        }
-    } catch (error) {
-        alert("Fehler beim Aktualisieren des Event-Status.");
-        console.error(error);
-    } finally {
-        isUpdatingStatus.value = false;
-    }
-};
-
 // API: Veranstaltungen laden
 const loadEvents = async () => {
     if (!process.client) return;
@@ -499,7 +489,6 @@ const loadEvents = async () => {
         events.value = data;
 
         for (const event of events.value) {
-            console.log(event);
             event.eventStatus = normalizeStatus(event.eventStatus !== undefined ? event.eventStatus : event.eventStatus);
             const shifts = await $fetch(`${config.public.apiBase}/shifts?eventId=${event.id}`, {
                 headers: { Authorization: getAuthHeader() }
@@ -523,8 +512,6 @@ const loadEvents = async () => {
             event.requiredHelpers = requiredHelpers;
             event.promisedHelpers = promisedHelpers;
         }
-
-        console.log(events);
 
         if (selectedEvent.value) {
             selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
@@ -662,12 +649,17 @@ const openDetails = async (event) => {
 
 const resetShiftForm = () => {
     showShiftForm.value = false;
-    shiftForm.value = { id: null, name: '', description: '', points: 10, requiredHelpers: 1, requirements: '', ageRestriction: 0, categoryIds: [] };
+    shiftForm.value = { id: null, name: '', description: '', requiredHelpers: 1, requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', categoryIds: [] };
 };
+
+const toLocalDatetime = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : '';
 
 const editShift = (shift) => {
     shiftForm.value = {
         ...shift,
+        difficulty: shift.difficulty ?? 0,
+        startTime: toLocalDatetime(shift.startTime),
+        endTime: toLocalDatetime(shift.endTime),
         categoryIds: (shift.categories ?? []).map(c => c.id),
     };
     showShiftForm.value = true;
