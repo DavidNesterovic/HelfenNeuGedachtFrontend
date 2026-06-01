@@ -34,16 +34,30 @@
         <div
           v-for="p in confirmedParticipations"
           :key="p.shiftId"
-          class="rounded-2xl bg-white px-4 py-4 shadow-sm"
+          class="rounded-[28px] bg-white p-5 shadow-sm"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <p class="font-medium text-slate-900 text-[15px]">{{ p.shiftName ?? 'Einsatz' }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">Angemeldet am {{ formatDate(p.updatedAt) }}</p>
+          <div class="flex gap-4">
+            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
+              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
             </div>
-            <span class="shrink-0 text-xs rounded-full bg-blue-50 text-blue-600 px-3 py-1 font-medium">
-              Angemeldet
-            </span>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
+              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
+                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
+                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
+            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+            <div class="flex items-center gap-3">
+              <button @click="cancelParticipation(p)" class="text-sm text-slate-400 hover:text-red-500 transition-colors">
+                Absagen
+              </button>
+              <span class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">Angemeldet</span>
+            </div>
           </div>
         </div>
       </div>
@@ -56,22 +70,59 @@
         Noch keine vergangenen Einsätze.
       </p>
 
-      <div v-else class="space-y-3">
+      <div v-else-if="completedParticipations.length > 0" class="space-y-3">
         <div
           v-for="p in completedParticipations"
           :key="p.shiftId"
-          class="rounded-2xl bg-white px-4 py-4 shadow-sm"
+          class="rounded-[28px] bg-white p-5 shadow-sm"
         >
-          <div class="flex items-start justify-between gap-3">
+          <div class="flex gap-4">
+            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
+              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
+            </div>
             <div class="min-w-0 flex-1">
-              <p class="font-medium text-slate-900 text-[15px]">{{ p.shiftName ?? 'Einsatz' }}</p>
-              <p class="mt-0.5 text-sm text-slate-400">{{ formatDate(p.updatedAt) }}</p>
+              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
+              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
+                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
+                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
+              </div>
             </div>
-            <div class="shrink-0 flex flex-col items-end gap-1.5">
-              <span class="text-xs rounded-full bg-emerald-50 text-emerald-600 px-2.5 py-1 font-medium whitespace-nowrap">
-                ✓ Erledigt
-              </span>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
+            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+            <span class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-600">✓ Erledigt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="!pending && canceledParticipations.length > 0" class="mt-8">
+      <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Abgesagt</h2>
+      <div class="space-y-3">
+        <div
+          v-for="p in canceledParticipations"
+          :key="p.shiftId"
+          class="rounded-[28px] bg-white p-5 shadow-sm"
+        >
+          <div class="flex gap-4">
+            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
+              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
             </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
+              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
+                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
+                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
+            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+            <span class="rounded-xl bg-red-50 border border-red-200 px-3 py-1 text-sm font-semibold text-red-600">Abgesagt</span>
           </div>
         </div>
       </div>
@@ -109,6 +160,10 @@ const completedParticipations = computed(() =>
   participations.value.filter(p => p.status === 2)
 )
 
+const canceledParticipations = computed(() =>
+  participations.value.filter(p => p.status === 3)
+)
+
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return new Intl.DateTimeFormat('de-AT', {
@@ -118,7 +173,19 @@ const formatDate = (dateStr) => {
   }).format(new Date(dateStr))
 }
 
-onMounted(async () => {
+const formatEventDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Intl.DateTimeFormat('de-AT', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateStr))
+}
+
+const fetchParticipations = async () => {
+  pending.value = true
   try {
     const res = await $fetch(`${config.public.apiBase}/Participation/user`, {
       headers: { Authorization: getAuthHeader() },
@@ -129,5 +196,33 @@ onMounted(async () => {
   } finally {
     pending.value = false
   }
+}
+
+const cancelParticipation = async (p) => {
+  if (!confirm('Möchtest du diesen Einsatz wirklich absagen?')) return
+  try {
+    await $fetch(`${config.public.apiBase}/Participation`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader() },
+      params: { shiftId: p.shiftId, status: 3 },
+    })
+    const entry = participations.value.find(x => x.shiftId === p.shiftId)
+    if (entry) entry.status = 3
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const onVisibilityChange = () => {
+  if (!document.hidden) fetchParticipations()
+}
+
+onMounted(() => {
+  fetchParticipations()
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>

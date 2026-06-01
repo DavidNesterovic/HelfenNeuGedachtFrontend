@@ -187,22 +187,55 @@
                             class="flex justify-between items-center p-4 border rounded-xl hover:bg-gray-50 transition-colors">
                             <div>
                                 <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
-                                <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ shift.helperList.length }}/{{ shift.requiredHelpers }}
-                                    Helfer</p>
-                                <div class="mt-4 p-2 bg-gray-50 rounded-lg">
-                                    <h5 class="text-xs font-black uppercase text-gray-400 mb-2">Helfer:innen</h5>
+                                <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
+                                <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
+                                    <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
 
-                                    <div v-if="shift.helperList && shift.helperList.length > 0">
-                                        <div v-for="helper in shift.helperList" :key="helper.userId"
-                                            class="text-sm text-gray-700 flex items-center gap-2">
-                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            {{ helper.userName }}
+                                    <template v-if="getInterestedHelpers(shift).length > 0">
+                                        <div class="px-3 pb-1.5">
+                                            <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
+                                                Interessiert ({{ getInterestedHelpers(shift).length }})
+                                            </span>
                                         </div>
-                                    </div>
+                                        <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
+                                            class="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
+                                            <div class="flex items-center gap-2 text-sm text-gray-700 min-w-0">
+                                                <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
+                                                <span class="truncate">{{ helper.userName }}</span>
+                                            </div>
+                                            <div class="flex gap-1 shrink-0 ml-2">
+                                                <button @click="confirmHelper(helper)"
+                                                    :disabled="helper._updating"
+                                                    class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded font-semibold hover:bg-green-200 transition-colors disabled:opacity-50">
+                                                    Bestätigen
+                                                </button>
+                                                <button @click="rejectHelper(helper)"
+                                                    :disabled="helper._updating"
+                                                    class="text-xs px-2 py-1 bg-red-50 text-red-600 rounded font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
+                                                    Ablehnen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
 
-                                    <div v-else class="text-xs text-gray-400 italic">
+                                    <template v-if="getConfirmedHelpers(shift).length > 0">
+                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
+                                            <span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">
+                                                Bestätigt ({{ getConfirmedHelpers(shift).length }})
+                                            </span>
+                                        </div>
+                                        <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
+                                            class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
+                                            <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                                            <span class="truncate">{{ helper.userName }}</span>
+                                        </div>
+                                    </template>
+
+                                    <div v-if="getInterestedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
+                                        class="px-3 pb-3 text-xs text-gray-400 italic">
                                         Noch keine Helfer:innen eingetragen
                                     </div>
+                                    <div class="pb-1"></div>
                                 </div>
                             </div>
                             <div class="flex gap-2">
@@ -359,7 +392,7 @@ const loadEvents = async () => {
                     headers: { Authorization: getAuthHeader() }
                 });
 
-                promisedHelpers += helpers.length;
+                promisedHelpers += helpers.filter(h => h.status === 1).length;
                 shift.helperList = helpers;
             }
 
@@ -500,6 +533,43 @@ const deleteShift = async (shiftId) => {
         alert("Fehler beim Löschen des Dienstes.");
     }
 };
+
+const getInterestedHelpers = (shift) => (shift.helperList || []).filter(h => h.status === 0)
+const getConfirmedHelpers = (shift) => (shift.helperList || []).filter(h => h.status === 1)
+
+const updateHelperStatus = async (helper, status) => {
+    helper._updating = true
+    try {
+        const response = await authenticatedFetch(
+            `${config.public.apiBase}/Participation/status?userId=${helper.userId}&shiftId=${helper.shiftId}&status=${status}`,
+            { method: 'PUT' }
+        )
+        if (response && response.ok) {
+            const previousStatus = helper.status
+            helper.status = status
+            // Keep the table-level confirmed count in sync
+            if (selectedEvent.value) {
+                if (status === 1 && previousStatus !== 1) {
+                    selectedEvent.value.promisedHelpers = (selectedEvent.value.promisedHelpers || 0) + 1
+                } else if (status !== 1 && previousStatus === 1) {
+                    selectedEvent.value.promisedHelpers = Math.max(0, (selectedEvent.value.promisedHelpers || 0) - 1)
+                }
+                const row = events.value.find(e => e.id === selectedEvent.value.id)
+                if (row) row.promisedHelpers = selectedEvent.value.promisedHelpers
+            }
+        } else {
+            alert('Fehler beim Aktualisieren des Status.')
+        }
+    } catch (error) {
+        alert('Fehler beim Aktualisieren des Status.')
+        console.error(error)
+    } finally {
+        helper._updating = false
+    }
+}
+
+const confirmHelper = (helper) => updateHelperStatus(helper, 1)
+const rejectHelper = (helper) => updateHelperStatus(helper, 3)
 
 onMounted(() => loadEvents());
 </script>

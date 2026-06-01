@@ -33,22 +33,29 @@
       <div
         v-for="p in interestedParticipations"
         :key="p.shiftId"
-        class="rounded-2xl bg-white px-4 py-4 shadow-sm"
+        class="rounded-[28px] bg-white p-5 shadow-sm"
       >
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex gap-4">
+          <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
+            <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
+          </div>
           <div class="min-w-0 flex-1">
-            <p class="font-medium text-slate-900 text-[15px] truncate">
-              {{ p.shiftName ?? 'Einsatz' }}
-            </p>
-            <p class="mt-0.5 text-sm text-slate-400">
-              Vorgemerkt am {{ formatDate(p.updatedAt) }}
-            </p>
+            <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
+            <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
+            <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
+              <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
+              <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
+            </div>
           </div>
-          <div class="shrink-0">
-            <svg viewBox="0 0 24 24" class="h-6 w-6 fill-blue-500 text-blue-500" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">
+            +{{ p.shiftPoints }} Punkte
+          </span>
+          <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+          <span class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600">
+            Vorgemerkt
+          </span>
         </div>
       </div>
     </div>
@@ -80,7 +87,19 @@ const formatDate = (dateStr) => {
   }).format(new Date(dateStr))
 }
 
-onMounted(async () => {
+const formatEventDate = (dateStr) => {
+  if (!dateStr) return ''
+  return new Intl.DateTimeFormat('de-AT', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(dateStr))
+}
+
+const fetchParticipations = async () => {
+  pending.value = true
   try {
     const res = await $fetch(`${config.public.apiBase}/Participation/user`, {
       headers: { Authorization: getAuthHeader() },
@@ -91,5 +110,18 @@ onMounted(async () => {
   } finally {
     pending.value = false
   }
+}
+
+const onVisibilityChange = () => {
+  if (!document.hidden) fetchParticipations()
+}
+
+onMounted(() => {
+  fetchParticipations()
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
