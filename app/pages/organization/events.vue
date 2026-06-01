@@ -102,6 +102,20 @@
                     </select>
                 </div>
 
+                <div class="flex items-center h-[42px] px-2 shrink-0">
+                    <label class="inline-flex items-center cursor-pointer select-none">
+                        <div class="relative">
+                            <input 
+                                v-model="showPastEvents" 
+                                type="checkbox" 
+                                class="sr-only peer"
+                            />
+                            <div class="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </div>
+                        <span class="ml-3 text-sm font-semibold text-gray-600">Vergangene anzeigen</span>
+                    </label>
+                </div>
+
                 <button 
                     @click="resetFilters"
                     class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center gap-2 h-[42px] shrink-0"
@@ -216,7 +230,7 @@
                 </div>
 
                 <!-- Table 2: Vergangene Veranstaltungen -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div v-if="showPastEvents" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
                             <span class="w-2.5 h-2.5 bg-gray-400 rounded-full"></span>
@@ -532,14 +546,14 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
-                                <input v-model="editForm.startDate" type="datetime-local" :min="minDateTime"
+                                <input v-model="editForm.startDate" type="datetime-local" :min="editMinStartDate"
                                     class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
                                 <input v-model="editForm.endDate" type="datetime-local"
-                                    :min="editForm.startDate || minDateTime"
+                                    :min="editMinEndDate"
                                     class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required />
                             </div>
@@ -595,6 +609,7 @@ const searchQuery = ref('');
 const selectedDateFilter = ref('');
 const selectedStatusFilter = ref('');
 const sortBy = ref('date-asc'); // date-asc, date-desc, title-asc, title-desc
+const showPastEvents = ref(false);
 
 const filteredAndSortedEvents = computed(() => {
     // 1. Filter
@@ -672,6 +687,7 @@ const resetFilters = () => {
     selectedDateFilter.value = '';
     selectedStatusFilter.value = '';
     sortBy.value = 'date-asc';
+    evaluateShowPastEventsDefault();
 };
 
 const toggleSort = (column) => {
@@ -688,6 +704,16 @@ const toggleSort = (column) => {
             sortBy.value = 'date-asc';
         }
     }
+};
+
+const evaluateShowPastEventsDefault = () => {
+    const now = new Date();
+    const hasPastNeedingAttention = events.value.some(event => {
+        const end = event.endDate ? new Date(event.endDate) : new Date(event.startDate);
+        const isPast = end < now;
+        return isPast && needsAttention(event);
+    });
+    showPastEvents.value = hasPastNeedingAttention;
 };
 
 const needsAttention = (event) => {
@@ -803,6 +829,22 @@ const shiftPointsPreview = computed(() => {
 
 const minDateTime = computed(() => new Date().toISOString().slice(0, 16));
 
+const editMinStartDate = computed(() => {
+    const status = Number(editForm.value.eventStatus);
+    if (status === 2 || status === 3) {
+        return '';
+    }
+    return minDateTime.value;
+});
+
+const editMinEndDate = computed(() => {
+    const status = Number(editForm.value.eventStatus);
+    if (status === 2 || status === 3) {
+        return editForm.value.startDate || '';
+    }
+    return editForm.value.startDate || minDateTime.value;
+});
+
 const formatDate = (date) => {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -890,6 +932,7 @@ const loadEvents = async () => {
         if (selectedEvent.value) {
             selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
         }
+        evaluateShowPastEventsDefault();
     } catch (error) {
         if (error.status === 401) logout();
     } finally {
