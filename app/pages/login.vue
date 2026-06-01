@@ -37,9 +37,17 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="password">
-            Passwort
-          </label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-sm font-medium text-gray-700" for="password">
+              Passwort
+            </label>
+            <NuxtLink
+              to="/forgot-password"
+              class="text-xs text-blue-600 hover:text-blue-700 font-medium transition"
+            >
+              Passwort vergessen?
+            </NuxtLink>
+          </div>
           <input
             id="password"
             v-model="password"
@@ -91,7 +99,13 @@ const route = useRoute()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
-const successMessage = ref(route.query.registered === '1' ? 'Registrierung erfolgreich! Du kannst dich jetzt anmelden.' : '')
+const successMessage = ref(
+  route.query.registered === '1'
+    ? 'Registrierung erfolgreich! Du kannst dich jetzt anmelden.'
+    : route.query.passwordReset === '1'
+      ? 'Passwort wurde erfolgreich zurückgesetzt. Du kannst dich jetzt anmelden.'
+      : ''
+)
 const loading = ref(false)
 let errorTimeout: ReturnType<typeof setTimeout> | null = null
 
