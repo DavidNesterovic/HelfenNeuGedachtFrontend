@@ -60,53 +60,256 @@
                 </div>
             </transition>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div v-if="isLoading" class="p-12 text-center text-gray-500 animate-pulse">
-                    Lade Veranstaltungen...
+            <!-- Filter, Search & Sort Section -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col md:flex-row flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[250px] w-full">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Suche</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        <input 
+                            v-model="searchQuery" 
+                            type="text" 
+                            placeholder="Veranstaltungsname oder Ort suchen..." 
+                            class="pl-10 block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition"
+                        />
+                    </div>
                 </div>
-                <table v-else class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Veranstaltung</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ort</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Datum</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Helfer</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aktion</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-100 text-sm">
-                        <tr v-for="event in events" :key="event.id" class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 font-bold text-gray-900">{{ event.title }}</td>
-                            <td class="px-6 py-4 text-gray-600">{{ event.location }}</td>
-                            <td class="px-6 py-4 text-center text-gray-600">
-                                {{ formatDate(event.startDate) }}
-                            </td>
-                            <td class="px-6 py-4 text-center font-semibold text-blue-600">
-                                {{ event.promisedHelpers + "/" + event.requiredHelpers }}
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <span :class="getStatusBadgeClass(event.eventStatus)" class="px-2.5 py-1 rounded-full text-xs font-semibold border">
-                                    {{ getStatusLabel(event.eventStatus) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center gap-4 font-bold uppercase text-xs">
-                                    <button @click="openDetails(event)"
-                                        class="text-blue-600 hover:text-blue-800">Details</button>
-                                    <button @click="openEdit(event)"
-                                        class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
-                                    <button @click="deleteEvent(event.id)"
-                                        class="text-red-500 hover:text-red-700">Löschen</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr v-if="events.length === 0">
-                            <td colspan="6" class="px-6 py-10 text-center text-gray-400 font-medium">Keine
-                                Veranstaltungen gefunden.</td>
-                        </tr>
-                    </tbody>
-                </table>
+
+                <div class="w-full md:w-48">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Datum filtern</label>
+                    <input 
+                        v-model="selectedDateFilter" 
+                        type="date" 
+                        class="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition"
+                    />
+                </div>
+
+                <div class="w-full md:w-48">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Status filtern</label>
+                    <select 
+                        v-model="selectedStatusFilter" 
+                        class="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition font-semibold"
+                    >
+                        <option value="">Alle Status</option>
+                        <option value="0">Geplant</option>
+                        <option value="1">Findet statt</option>
+                        <option value="2">Durchgeführt</option>
+                        <option value="3">Abgesagt</option>
+                    </select>
+                </div>
+
+                <button 
+                    @click="resetFilters"
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-bold transition flex items-center gap-2 h-[42px] shrink-0"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
+                    </svg>
+                    Zurücksetzen
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div v-if="isLoading" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500 animate-pulse">
+                Lade Veranstaltungen...
+            </div>
+
+            <div v-else class="space-y-8">
+                <!-- Table 1: Aktive & Bevorstehende Veranstaltungen -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                        <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+                            Aktive & Bevorstehende Veranstaltungen ({{ upcomingEventsList.length }})
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th 
+                                        @click="toggleSort('title')" 
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    >
+                                        <div class="flex items-center gap-1.5">
+                                            <span>Veranstaltung</span>
+                                            <span class="text-gray-400">
+                                                <svg v-if="sortBy === 'title-asc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg v-else-if="sortBy === 'title-desc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                                <svg v-else class="w-3.5 h-3.5 inline text-gray-300 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ort</th>
+                                    <th 
+                                        @click="toggleSort('date')" 
+                                        class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    >
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Datum</span>
+                                            <span class="text-gray-400">
+                                                <svg v-if="sortBy === 'date-asc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg v-else-if="sortBy === 'date-desc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                                <svg v-else class="w-3.5 h-3.5 inline text-gray-300 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Helfer</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100 text-sm">
+                                <tr v-for="event in upcomingEventsList" :key="event.id" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 font-bold text-gray-900">{{ event.title }}</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ event.location }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-600">
+                                        {{ formatDate(event.startDate) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-semibold text-blue-600">
+                                        {{ event.promisedHelpers + "/" + event.requiredHelpers }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span :class="getStatusBadgeClass(event.eventStatus)" class="px-2.5 py-1 rounded-full text-xs font-semibold border">
+                                            {{ getStatusLabel(event.eventStatus) }}
+                                        </span>
+                                        <div v-if="needsAttention(event)" class="mt-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md" :title="getAttentionHint(event)">
+                                            <svg class="w-3.5 h-3.5 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span>Status prüfen</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex justify-center gap-4 font-bold uppercase text-xs">
+                                            <button @click="openDetails(event)"
+                                                class="text-blue-600 hover:text-blue-800">Details</button>
+                                            <button @click="openEdit(event)"
+                                                class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
+                                            <button @click="deleteEvent(event.id)"
+                                                class="text-red-500 hover:text-red-700">Löschen</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="upcomingEventsList.length === 0">
+                                    <td colspan="6" class="px-6 py-10 text-center text-gray-400 font-medium">Keine aktiven oder bevorstehenden Veranstaltungen gefunden.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Table 2: Vergangene Veranstaltungen -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                        <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-gray-400 rounded-full"></span>
+                            Vergangene Veranstaltungen ({{ pastEventsList.length }})
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th 
+                                        @click="toggleSort('title')" 
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    >
+                                        <div class="flex items-center gap-1.5">
+                                            <span>Veranstaltung</span>
+                                            <span class="text-gray-400">
+                                                <svg v-if="sortBy === 'title-asc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg v-else-if="sortBy === 'title-desc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                                <svg v-else class="w-3.5 h-3.5 inline text-gray-300 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ort</th>
+                                    <th 
+                                        @click="toggleSort('date')" 
+                                        class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                    >
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Datum</span>
+                                            <span class="text-gray-400">
+                                                <svg v-if="sortBy === 'date-asc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                                                </svg>
+                                                <svg v-else-if="sortBy === 'date-desc'" class="w-3.5 h-3.5 inline text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                                <svg v-else class="w-3.5 h-3.5 inline text-gray-300 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Helfer</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100 text-sm">
+                                <tr v-for="event in pastEventsList" :key="event.id" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 font-bold text-gray-900 opacity-75">{{ event.title }}</td>
+                                    <td class="px-6 py-4 text-gray-600 opacity-75">{{ event.location }}</td>
+                                    <td class="px-6 py-4 text-center text-gray-600 opacity-75">
+                                        {{ formatDate(event.startDate) }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-semibold text-blue-600 opacity-75">
+                                        {{ event.promisedHelpers + "/" + event.requiredHelpers }}
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span :class="getStatusBadgeClass(event.eventStatus)" class="px-2.5 py-1 rounded-full text-xs font-semibold border">
+                                            {{ getStatusLabel(event.eventStatus) }}
+                                        </span>
+                                        <div v-if="needsAttention(event)" class="mt-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md" :title="getAttentionHint(event)">
+                                            <svg class="w-3.5 h-3.5 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span>Status prüfen</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex justify-center gap-4 font-bold uppercase text-xs">
+                                            <button @click="openDetails(event)"
+                                                class="text-blue-600 hover:text-blue-800">Details</button>
+                                            <button @click="openEdit(event)"
+                                                class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
+                                            <button @click="deleteEvent(event.id)"
+                                                class="text-red-500 hover:text-red-700">Löschen</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="pastEventsList.length === 0">
+                                    <td colspan="6" class="px-6 py-10 text-center text-gray-400 font-medium">Keine vergangenen Veranstaltungen gefunden.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -342,17 +545,24 @@
                             </div>
                         </div>
                         <div class="flex flex-col md:col-span-2">
-                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
-                            <select 
-                                v-model="editForm.eventStatus" 
-                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
-                            >
-                                <option :value="0">Geplant</option>
-                                <option :value="1">Findet statt</option>
-                                <option :value="2">Durchgeführt</option>
-                                <option :value="3">Abgesagt</option>
-                            </select>
-                        </div>
+                                                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
+                                                            <select 
+                                                                v-model="editForm.eventStatus" 
+                                                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                                                                :class="{ 'border-amber-300 focus:ring-amber-500': editingEventNeedsAttention }"
+                                                            >
+                                                                <option :value="0">Geplant</option>
+                                                                <option :value="1">Findet statt</option>
+                                                                <option :value="2">Durchgeführt</option>
+                                                                <option :value="3">Abgesagt</option>
+                                                            </select>
+                                                            <div v-if="editingEventNeedsAttention" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
+                                                                <svg class="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                                </svg>
+                                                                <span>{{ editingEventAttentionHint }}</span>
+                                                            </div>
+                                                        </div>
                         
                         <div class="md:col-span-2 flex gap-4 mt-2">
                             <button type="submit" :disabled="isUpdatingEvent"
@@ -379,6 +589,170 @@ definePageMeta({ middleware: 'auth' })
 const config = useRuntimeConfig();
 const events = ref([]);
 const isLoading = ref(true);
+
+// Search, Filter & Sort State
+const searchQuery = ref('');
+const selectedDateFilter = ref('');
+const selectedStatusFilter = ref('');
+const sortBy = ref('date-asc'); // date-asc, date-desc, title-asc, title-desc
+
+const filteredAndSortedEvents = computed(() => {
+    // 1. Filter
+    const result = events.value.filter(event => {
+        // Search Query
+        const q = searchQuery.value.toLowerCase().trim();
+        if (q) {
+            const matchesTitle = event.title?.toLowerCase().includes(q);
+            const matchesLocation = event.location?.toLowerCase().includes(q);
+            if (!matchesTitle && !matchesLocation) return false;
+        }
+
+        // Date Filter
+        if (selectedDateFilter.value) {
+            const filterDate = new Date(selectedDateFilter.value);
+            const start = new Date(event.startDate);
+            const end = event.endDate ? new Date(event.endDate) : start;
+            
+            // Format to date strings (ignoring time) to check day match
+            const filterDateString = filterDate.toDateString();
+            const startDateString = start.toDateString();
+            const endDateString = end.toDateString();
+
+            const isExactStart = filterDateString === startDateString;
+            const isExactEnd = filterDateString === endDateString;
+            const isWithinRange = filterDate >= start && filterDate <= end;
+
+            if (!isExactStart && !isExactEnd && !isWithinRange) {
+                return false;
+            }
+        }
+
+        // Status Filter
+        if (selectedStatusFilter.value !== '') {
+            const statusNum = Number(selectedStatusFilter.value);
+            if (normalizeStatus(event.eventStatus) !== statusNum) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    // 2. Sort
+    return result.sort((a, b) => {
+        if (sortBy.value === 'date-asc') {
+            return new Date(a.startDate) - new Date(b.startDate);
+        } else if (sortBy.value === 'date-desc') {
+            return new Date(b.startDate) - new Date(a.startDate);
+        } else if (sortBy.value === 'title-asc') {
+            return (a.title || '').localeCompare(b.title || '');
+        } else if (sortBy.value === 'title-desc') {
+            return (b.title || '').localeCompare(a.title || '');
+        }
+        return 0;
+    });
+});
+
+const upcomingEventsList = computed(() => {
+    return filteredAndSortedEvents.value.filter(e => {
+        const end = e.endDate ? new Date(e.endDate) : new Date(e.startDate);
+        return end >= new Date();
+    });
+});
+
+const pastEventsList = computed(() => {
+    return filteredAndSortedEvents.value.filter(e => {
+        const end = e.endDate ? new Date(e.endDate) : new Date(e.startDate);
+        return end < new Date();
+    });
+});
+
+const resetFilters = () => {
+    searchQuery.value = '';
+    selectedDateFilter.value = '';
+    selectedStatusFilter.value = '';
+    sortBy.value = 'date-asc';
+};
+
+const toggleSort = (column) => {
+    if (column === 'title') {
+        if (sortBy.value === 'title-asc') {
+            sortBy.value = 'title-desc';
+        } else {
+            sortBy.value = 'title-asc';
+        }
+    } else if (column === 'date') {
+        if (sortBy.value === 'date-asc') {
+            sortBy.value = 'date-desc';
+        } else {
+            sortBy.value = 'date-asc';
+        }
+    }
+};
+
+const needsAttention = (event) => {
+    const now = new Date();
+    const start = new Date(event.startDate);
+    const end = event.endDate ? new Date(event.endDate) : start;
+    const status = normalizeStatus(event.eventStatus);
+
+    if (start > now) {
+        if (status === 2) {
+            return true;
+        }
+    } else if (end < now) {
+        if (status === 0 || status === 1) {
+            return true;
+        }
+    }
+    return false;
+};
+
+const getAttentionHint = (event) => {
+    const now = new Date();
+    const start = new Date(event.startDate);
+    const end = event.endDate ? new Date(event.endDate) : start;
+    const status = normalizeStatus(event.eventStatus);
+
+    if (start > now && status === 2) {
+        return 'Zukünftiges Event kann nicht durchgeführt sein.';
+    }
+    if (end < now && (status === 0 || status === 1)) {
+        return 'Vergangenes Event sollte durchgeführt oder abgesagt sein.';
+    }
+    return '';
+};
+
+const editingEventNeedsAttention = computed(() => {
+    if (!editingEvent.value) return false;
+    const now = new Date();
+    const start = editForm.value.startDate ? new Date(editForm.value.startDate) : null;
+    const end = editForm.value.endDate ? new Date(editForm.value.endDate) : start;
+    const status = Number(editForm.value.eventStatus);
+
+    if (start && start > now) {
+        if (status === 2) return true;
+    } else if (end && end < now) {
+        if (status === 0 || status === 1) return true;
+    }
+    return false;
+});
+
+const editingEventAttentionHint = computed(() => {
+    if (!editingEvent.value) return '';
+    const now = new Date();
+    const start = editForm.value.startDate ? new Date(editForm.value.startDate) : null;
+    const end = editForm.value.endDate ? new Date(editForm.value.endDate) : start;
+    const status = Number(editForm.value.eventStatus);
+
+    if (start && start > now && status === 2) {
+        return 'Eine Veranstaltung in der Zukunft kann nicht den Status "Durchgeführt" haben.';
+    }
+    if (end && end < now && (status === 0 || status === 1)) {
+        return 'Eine Veranstaltung in der Vergangenheit muss den Status "Durchgeführt" oder "Abgesagt" haben.';
+    }
+    return '';
+});
 const isSubmitting = ref(false);
 const showForm = ref(false);
 const selectedEvent = ref(null);
