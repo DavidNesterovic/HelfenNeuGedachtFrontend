@@ -246,18 +246,19 @@ const config = useRuntimeConfig()
 const pending = ref(true)
 const participations = ref([])
 const notifications = ref(true)
+const userMe = ref(null)
 
 const userInfo = getUserInfo()
-const userName = computed(() => userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
+const userName = computed(() => userMe.value?.userName ?? userMe.value?.username ?? userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
 
 const completedParticipations = computed(() =>
   participations.value.filter(p => p.status === 'Completed')
 )
 
-const totalEinsaetze = computed(() => completedParticipations.value.length)
+const totalEinsaetze = computed(() => userMe.value?.completedParticipations ?? completedParticipations.value.length)
 
 const totalPunkte = computed(() =>
-  completedParticipations.value.reduce((sum, p) => sum + (p.shift?.points ?? 0), 0)
+  userMe.value?.points ?? completedParticipations.value.reduce((sum, p) => sum + (p.shift?.points ?? 0), 0)
 )
 
 const totalStunden = computed(() => {
@@ -365,12 +366,15 @@ const toggleCategoryPreference = async (id) => {
 
 onMounted(async () => {
   try {
-    const [participationsRes, categoriesRes, preferencesRes] = await Promise.allSettled([
+    const [participationsRes, categoriesRes, preferencesRes, meRes] = await Promise.allSettled([
       $fetch(`${config.public.apiBase}/Participation/user`, {
         headers: { Authorization: getAuthHeader() },
       }),
       $fetch(`${config.public.apiBase}/categories`),
       $fetch(`${config.public.apiBase}/users/preferences`, {
+        headers: { Authorization: getAuthHeader() },
+      }),
+      $fetch(`${config.public.apiBase}/User/me`, {
         headers: { Authorization: getAuthHeader() },
       }),
     ])
@@ -379,6 +383,9 @@ onMounted(async () => {
     if (categoriesRes.status === 'fulfilled') allCategories.value = categoriesRes.value || []
     if (preferencesRes.status === 'fulfilled') {
       selectedCategoryIds.value = (preferencesRes.value || []).map(c => c.id)
+    }
+    if (meRes.status === 'fulfilled') {
+      userMe.value = meRes.value
     }
   } catch (e) {
     console.error(e)
