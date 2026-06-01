@@ -30,13 +30,12 @@
     </template>
 
     <div v-else class="mt-5 space-y-3">
-      <NuxtLink
+      <div
         v-for="p in interestedParticipations"
         :key="p.shiftId"
-        :to="p.eventId ? `/event/${p.eventId}` : '#'"
-        class="block rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+        class="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-300"
       >
-        <div class="flex gap-4">
+        <NuxtLink :to="p.eventId ? `/event/${p.eventId}` : '#'" class="flex gap-4">
           <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
             <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
           </div>
@@ -48,17 +47,28 @@
               <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
             </div>
           </div>
-        </div>
+        </NuxtLink>
         <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
           <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">
             +{{ p.shiftPoints }} Punkte
           </span>
           <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
-          <span class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600">
-            Vorgemerkt
-          </span>
+          <div class="flex items-center gap-2">
+            <button
+              @click="removeInterest(p)"
+              class="text-sm text-slate-400 hover:text-red-500 transition-colors"
+            >
+              Entfernen
+            </button>
+            <button
+              @click="applyForShift(p)"
+              class="rounded-xl bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              Anmelden
+            </button>
+          </div>
         </div>
-      </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -110,6 +120,32 @@ const fetchParticipations = async () => {
     console.error(e)
   } finally {
     pending.value = false
+  }
+}
+
+const applyForShift = async (p) => {
+  try {
+    await $fetch(`${config.public.apiBase}/Participation`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader() },
+      params: { shiftId: p.shiftId, status: 4 },
+    })
+    participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const removeInterest = async (p) => {
+  try {
+    await $fetch(`${config.public.apiBase}/Participation`, {
+      method: 'DELETE',
+      headers: { Authorization: getAuthHeader() },
+      params: { shiftId: p.shiftId },
+    })
+    participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+  } catch (e) {
+    console.error(e)
   }
 }
 

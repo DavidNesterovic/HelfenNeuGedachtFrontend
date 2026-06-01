@@ -47,7 +47,7 @@
     </div>
 
     <!-- Shifts dropdown -->
-    <div v-if="event.shifts?.length" class="mt-4 pt-3 border-t border-slate-100">
+    <div v-if="visibleShifts.length" class="mt-4 pt-3 border-t border-slate-100">
       <button
         type="button"
         class="w-full flex items-center justify-between py-0.5"
@@ -55,7 +55,7 @@
       >
         <div class="flex items-center gap-2">
           <span class="text-sm font-medium text-slate-600">
-            {{ event.shifts.length }} {{ event.shifts.length === 1 ? 'Schicht' : 'Schichten' }}
+            {{ visibleShifts.length }} {{ visibleShifts.length === 1 ? 'Schicht' : 'Schichten' }}
           </span>
           <span v-if="interestedCount > 0" class="text-xs font-medium text-blue-600">
             · {{ interestedCount }} vorgemerkt
@@ -78,7 +78,7 @@
 
       <div v-if="showShifts" class="mt-2 space-y-2">
         <div
-          v-for="shift in event.shifts"
+          v-for="shift in visibleShifts"
           :key="shift.id"
           class="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5"
         >
@@ -185,6 +185,12 @@ const submittingShiftIds = reactive(new Set())
 const interestedCount = computed(() => interestedShiftIds.size)
 const appliedCount = computed(() => appliedShiftIds.size)
 
+const visibleShifts = computed(() =>
+  (props.event.shifts ?? []).filter(s =>
+    !interestedShiftIds.has(s.id) && !appliedShiftIds.has(s.id) && !confirmedShiftIds.has(s.id)
+  )
+)
+
 const normalizedStatus = computed(() => {
   const statusVal = props.event.eventStatus !== undefined ? props.event.eventStatus :
                     props.event.EventStatus !== undefined ? props.event.EventStatus :
@@ -256,11 +262,19 @@ const toggleShiftInterest = async (shiftId) => {
   submittingShiftIds.add(shiftId)
 
   try {
-    await $fetch(`${config.public.apiBase}/Participation`, {
-      method: 'POST',
-      headers: { Authorization: getAuthHeader() },
-      params: { shiftId, status: 0 },
-    })
+    if (wasInterested) {
+      await $fetch(`${config.public.apiBase}/Participation`, {
+        method: 'DELETE',
+        headers: { Authorization: getAuthHeader() },
+        params: { shiftId },
+      })
+    } else {
+      await $fetch(`${config.public.apiBase}/Participation`, {
+        method: 'POST',
+        headers: { Authorization: getAuthHeader() },
+        params: { shiftId, status: 0 },
+      })
+    }
   } catch (e) {
     console.error('Participation request failed:', e)
     if (wasInterested) {
