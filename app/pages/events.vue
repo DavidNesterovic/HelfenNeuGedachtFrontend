@@ -33,7 +33,7 @@
       <FilterChip
         v-for="c in categories"
         :key="c.id"
-        :active="filters.category === c.id"
+        :active="filters.categories.includes(c.id)"
         @click="toggleCategory(c.id)"
       >
         {{ c.name }}
@@ -91,7 +91,7 @@ const config = useRuntimeConfig()
 const filters = ref({
   search: '',
   quickFilter: null,
-  category: null,
+  categories: [],
 })
 
 const quickFilters = [
@@ -114,7 +114,9 @@ const toggleQuickFilter = (key) => {
 }
 
 const toggleCategory = (id) => {
-  filters.value.category = filters.value.category === id ? null : id
+  const idx = filters.value.categories.indexOf(id)
+  if (idx === -1) filters.value.categories.push(id)
+  else filters.value.categories.splice(idx, 1)
 }
 
 const filteredEvents = computed(() => {
@@ -151,10 +153,10 @@ const filteredEvents = computed(() => {
     })
   }
 
-  if (filters.value.category !== null) {
+  if (filters.value.categories.length > 0) {
     result = result.filter(e =>
       (e.shifts ?? []).some(s =>
-        (s.categories ?? []).some(c => c.id === filters.value.category)
+        (s.categories ?? []).some(c => filters.value.categories.includes(c.id))
       )
     )
   }

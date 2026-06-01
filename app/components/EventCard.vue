@@ -211,7 +211,7 @@ const imageUrl = computed(() =>
 )
 
 const organizationLabel = computed(() =>
-  `Organisation #${props.event.organizationId}`
+  props.event.organizationName || `Organisation #${props.event.organizationId}`
 )
 
 const helperLabel = computed(() =>
