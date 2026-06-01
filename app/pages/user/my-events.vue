@@ -34,7 +34,8 @@
         <div
           v-for="p in confirmedParticipations"
           :key="p.shiftId"
-          class="rounded-[28px] bg-white p-5 shadow-sm"
+          @click="goToEvent(p.eventId)"
+          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         >
           <div class="flex gap-4">
             <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
@@ -53,7 +54,7 @@
             <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
             <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
             <div class="flex items-center gap-3">
-              <button @click="cancelParticipation(p)" class="text-sm text-slate-400 hover:text-red-500 transition-colors">
+              <button @click.stop="cancelParticipation(p)" class="text-sm text-slate-400 hover:text-red-500 transition-colors">
                 Absagen
               </button>
               <span class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">Angemeldet</span>
@@ -74,7 +75,8 @@
         <div
           v-for="p in completedParticipations"
           :key="p.shiftId"
-          class="rounded-[28px] bg-white p-5 shadow-sm"
+          @click="goToEvent(p.eventId)"
+          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         >
           <div class="flex gap-4">
             <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
@@ -104,7 +106,8 @@
         <div
           v-for="p in canceledParticipations"
           :key="p.shiftId"
-          class="rounded-[28px] bg-white p-5 shadow-sm"
+          @click="goToEvent(p.eventId)"
+          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         >
           <div class="flex gap-4">
             <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
@@ -210,6 +213,12 @@ const cancelParticipation = async (p) => {
     if (entry) entry.status = 3
   } catch (e) {
     console.error(e)
+  }
+}
+
+const goToEvent = (eventId) => {
+  if (eventId) {
+    navigateTo(`/event/${eventId}`)
   }
 }
 
