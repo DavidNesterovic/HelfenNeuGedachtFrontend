@@ -439,13 +439,28 @@
                                 <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
                                     <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
 
+                                    <!-- Bookmarks (view-only) -->
                                     <template v-if="getInterestedHelpers(shift).length > 0">
                                         <div class="px-3 pb-1.5">
-                                            <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
-                                                Interessiert ({{ getInterestedHelpers(shift).length }})
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                                Vorgemerkt ({{ getInterestedHelpers(shift).length }})
                                             </span>
                                         </div>
                                         <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
+                                            class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
+                                            <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
+                                            <span class="truncate">{{ helper.userName }}</span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Applications (Accept/Deny) -->
+                                    <template v-if="getAppliedHelpers(shift).length > 0">
+                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
+                                            <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
+                                                Angemeldet ({{ getAppliedHelpers(shift).length }})
+                                            </span>
+                                        </div>
+                                        <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
                                             class="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
                                             <div class="flex items-center gap-2 text-sm text-gray-700 min-w-0">
                                                 <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
@@ -467,7 +482,7 @@
                                     </template>
 
                                     <template v-if="getConfirmedHelpers(shift).length > 0">
-                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
+                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 || getAppliedHelpers(shift).length > 0 }">
                                             <span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">
                                                 Bestätigt ({{ getConfirmedHelpers(shift).length }})
                                             </span>
@@ -479,7 +494,7 @@
                                         </div>
                                     </template>
 
-                                    <div v-if="getInterestedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
+                                    <div v-if="getInterestedHelpers(shift).length === 0 && getAppliedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
                                         class="px-3 pb-3 text-xs text-gray-400 italic">
                                         Noch keine Helfer:innen eingetragen
                                     </div>
@@ -1121,6 +1136,7 @@ const deleteShift = async (shiftId) => {
 };
 
 const getInterestedHelpers = (shift) => (shift.helperList || []).filter(h => h.status === 0)
+const getAppliedHelpers = (shift) => (shift.helperList || []).filter(h => h.status === 4)
 const getConfirmedHelpers = (shift) => (shift.helperList || []).filter(h => h.status === 1)
 
 const updateHelperStatus = async (helper, status) => {
