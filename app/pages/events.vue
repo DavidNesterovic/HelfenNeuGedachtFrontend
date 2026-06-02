@@ -29,7 +29,7 @@
         </div>
 
         <!-- Schnellfilter (Slider auf Mobile/Tablet, Liste auf Desktop) -->
-        <div class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
+        <!-- <div class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
           <h3 class="hidden lg:block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Zeitraum & Dauer</h3>
           <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide flex-nowrap lg:flex-wrap">
             <FilterChip
@@ -42,7 +42,7 @@
               {{ f.label }}
             </FilterChip>
           </div>
-        </div>
+        </div> -->
 
         <!-- Kategorien (Slider auf Mobile/Tablet, Liste auf Desktop) -->
         <div v-if="categories.length > 0" class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
@@ -52,7 +52,7 @@
               {{ filters.categories.length }} aktiv
             </span>
           </div>
-          <div class="flex lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide flex-nowrap lg:flex-wrap">
+          <div class="flex lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible p-2 lg:pb-0 scrollbar-hide flex-nowrap lg:flex-wrap">
             <FilterChip
               v-for="c in categories"
               :key="c.id"
