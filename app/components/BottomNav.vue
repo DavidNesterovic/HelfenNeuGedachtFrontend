@@ -41,9 +41,9 @@ const { interestedCount, upcomingCount, refresh: refreshCounts } = useParticipat
 const { avatarUrl, refresh: refreshUser } = useCurrentUser()
 
 const items = computed(() => [
-  { to: '/events',          label: 'Einsätze',    icon: '⌂', badge: 0 },
+  { to: '/events',          label: 'Neues',    icon: '⌂', badge: 0 },
   { to: '/user/interested', label: 'Interessiert', icon: '♡', badge: interestedCount.value },
-  { to: '/user/my-events',  label: 'Meine',        icon: '◫', badge: upcomingCount.value },
+  { to: '/user/my-events',  label: 'Einsätze',        icon: '◫', badge: upcomingCount.value },
   { to: '/user/profile',    label: 'Profil',       icon: '◌', badge: 0, isProfile: true },
 ])
 

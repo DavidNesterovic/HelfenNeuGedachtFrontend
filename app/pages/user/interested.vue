@@ -90,7 +90,7 @@
               @click="applyForShift(p)"
               class="rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-700 shadow-sm transition-all active:scale-[0.98]"
             >
-              Anmelden
+              Anfragen
             </button>
           </div>
         </div>

@@ -6,7 +6,7 @@
             <header class="flex justify-between items-center mb-8">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Dienste</h1>
-                    <p class="text-gray-600">Verwalten Sie Ihre Dienstvorlagen</p>
+                    <p class="text-gray-600">Verwalten Sie Ihre Dienste</p>
                 </div>
                 <button @click="openCreateModal"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all shadow-md">

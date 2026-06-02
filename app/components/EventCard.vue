@@ -133,7 +133,7 @@
               class="rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition disabled:opacity-40"
               @click="applyForShift(shift.id)"
             >
-              Anmelden
+              Anfragen
             </button>
             <button
               type="button"
