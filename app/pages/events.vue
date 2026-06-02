@@ -70,9 +70,16 @@
           :initialInterestedShiftIds="(event.shifts ?? []).filter(s => interestedShiftIds.has(s.id)).map(s => s.id)"
           :initialAppliedShiftIds="(event.shifts ?? []).filter(s => appliedShiftIds.has(s.id)).map(s => s.id)"
           :initialConfirmedShiftIds="(event.shifts ?? []).filter(s => confirmedShiftIds.has(s.id)).map(s => s.id)"
+          @show-organization="openOrgDetails"
         />
       </template>
     </div>
+
+    <OrganizationPopup
+      :show="showOrgPopup"
+      :orgId="selectedOrgId"
+      @close="closeOrgPopup"
+    />
   </div>
 </template>
 
@@ -108,6 +115,20 @@ const events = ref([])
 const interestedShiftIds = ref(new Set())
 const appliedShiftIds = ref(new Set())
 const confirmedShiftIds = ref(new Set())
+
+const showOrgPopup = ref(false)
+const selectedOrgId = ref(null)
+
+const openOrgDetails = (orgId) => {
+  if (!orgId) return
+  selectedOrgId.value = orgId
+  showOrgPopup.value = true
+}
+
+const closeOrgPopup = () => {
+  showOrgPopup.value = false
+  selectedOrgId.value = null
+}
 
 const toggleQuickFilter = (key) => {
   filters.value.quickFilter = filters.value.quickFilter === key ? null : key
