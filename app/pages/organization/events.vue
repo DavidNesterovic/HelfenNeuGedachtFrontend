@@ -808,16 +808,6 @@
                                 </div>
                             </div>
 
-                            <!-- Additional Info -->
-                            <div class="space-y-3 bg-gray-50 p-4 border border-gray-100 rounded-xl">
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="font-semibold text-gray-500">Letzter Einsatz</span>
-                                    <span class="font-bold text-gray-700">
-                                        {{ selectedUserDetail.lastParticipationDate ? formatDate(selectedUserDetail.lastParticipationDate) : 'Nie' }}
-                                    </span>
-                                </div>
-                            </div>
-
                             <!-- Actions -->
                             <button @click="closeUserPopup" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-sm">
                                 Schließen
