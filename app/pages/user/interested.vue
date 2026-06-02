@@ -63,6 +63,7 @@ import { getAuthHeader } from '~/assets/utils/auth.js'
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
 const config = useRuntimeConfig()
+const { refresh: refreshCounts } = useParticipationCounts()
 const pending = ref(true)
 const participations = ref([])
 
@@ -94,6 +95,7 @@ const applyForShift = async (p) => {
       params: { shiftId: p.shiftId, status: 4 },
     })
     participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+    refreshCounts()
   } catch (e) {
     console.error(e)
   }
@@ -107,6 +109,7 @@ const removeInterest = async (p) => {
       params: { shiftId: p.shiftId },
     })
     participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+    refreshCounts()
   } catch (e) {
     console.error(e)
   }

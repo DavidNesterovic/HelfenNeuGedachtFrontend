@@ -107,6 +107,7 @@ import { getAuthHeader } from '~/assets/utils/auth.js'
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
 const config = useRuntimeConfig()
+const { refresh: refreshCounts } = useParticipationCounts()
 const pending = ref(true)
 const participations = ref([])
 
@@ -147,6 +148,7 @@ const cancelParticipation = async (p) => {
     })
     const entry = participations.value.find(x => x.shiftId === p.shiftId)
     if (entry) entry.status = 3
+    refreshCounts()
   } catch (e) {
     console.error(e)
   }
