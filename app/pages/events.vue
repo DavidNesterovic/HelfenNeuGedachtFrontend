@@ -189,12 +189,15 @@ const loadEvents = async () => {
   pending.value = true
   error.value = false
   try {
-    const [eventsRes, participationsRes, categoriesRes] = await Promise.allSettled([
+    const [eventsRes, participationsRes, categoriesRes, preferencesRes] = await Promise.allSettled([
       $fetch(`${config.public.apiBase}/Events`, { params: { upcoming: true } }),
       $fetch(`${config.public.apiBase}/Participation/user`, {
         headers: { Authorization: getAuthHeader() },
       }),
       $fetch(`${config.public.apiBase}/categories`),
+      $fetch(`${config.public.apiBase}/users/preferences`, {
+        headers: { Authorization: getAuthHeader() },
+      }),
     ])
 
     if (eventsRes.status === 'fulfilled') {
@@ -212,6 +215,11 @@ const loadEvents = async () => {
 
     if (categoriesRes.status === 'fulfilled') {
       categories.value = categoriesRes.value || []
+    }
+
+    if (preferencesRes.status === 'fulfilled') {
+      const saved = (preferencesRes.value || []).map(c => c.id).filter(Boolean)
+      if (saved.length > 0) filters.value.categories = saved
     }
   } finally {
     pending.value = false

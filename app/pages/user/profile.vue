@@ -265,6 +265,8 @@ const participations = ref([])
 const notifications = ref(true)
 const userMe = ref(null)
 
+const { refresh: refreshNavUser } = useCurrentUser()
+
 const userInfo = getUserInfo()
 const userName = computed(() => userMe.value?.userName ?? userMe.value?.username ?? userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
 const avatarUrl = computed(() => userMe.value?.avatarUrl ? `${apiBase.value}${userMe.value.avatarUrl}` : null)
@@ -282,6 +284,7 @@ const handleAvatarFile = async (file) => {
       headers: { Authorization: getAuthHeader() },
     })
     userMe.value = updated
+    refreshNavUser()
   } catch (e) {
     console.error('Fehler beim Hochladen des Profilbilds:', e)
   }

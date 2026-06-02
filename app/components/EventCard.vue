@@ -188,6 +188,7 @@ const props = defineProps({
 
 const emit = defineEmits(['show-organization'])
 const config = useRuntimeConfig()
+const { refresh: refreshCounts } = useParticipationCounts()
 const showShifts = ref(false)
 
 const interestedShiftIds = reactive(new Set(props.initialInterestedShiftIds))
@@ -289,6 +290,7 @@ const toggleShiftInterest = async (shiftId) => {
         params: { shiftId, status: 0 },
       })
     }
+    refreshCounts()
   } catch (e) {
     console.error('Participation request failed:', e)
     if (wasInterested) {
@@ -316,6 +318,7 @@ const applyForShift = async (shiftId) => {
       headers: { Authorization: getAuthHeader() },
       params: { shiftId, status: 4 },
     })
+    refreshCounts()
   } catch (e) {
     console.error('Apply request failed:', e)
     appliedShiftIds.delete(shiftId)
