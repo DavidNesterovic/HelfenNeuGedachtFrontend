@@ -347,9 +347,7 @@
                 <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
                     <!-- Left Side: Stammdaten (Read-Only) -->
                     <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200 space-y-6">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-900 mb-4">Stammdaten</h3>
-                            
+                        <div>                            
                             <div class="space-y-4">
                                 <div>
                                     <span class="block text-xs font-bold text-gray-400 uppercase">Titel</span>
@@ -415,7 +413,7 @@
 
                     <!-- Right Side: Dienste (Read-Only) -->
                     <div class="w-full md:w-1/2 p-6 overflow-y-auto flex flex-col">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Dienste (Einsicht)</h3>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Dienste</h3>
 
                         <!-- Shift List (Read-Only) -->
                         <div class="space-y-3 flex-1 overflow-y-auto">
@@ -509,7 +507,6 @@
                 <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
                     <!-- Left Side: Stammdaten Form -->
                     <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Stammdaten</h3>
                         <form @submit.prevent="updateEvent" class="space-y-4">
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
@@ -945,6 +942,7 @@ const shiftForm = ref({ id: null, name: '', description: '', requiredHelpers: 1,
 const editingEvent = ref(null);
 const editForm = ref({ title: '', location: '', startDate: '', endDate: '', description: '', eventStatus: 0 });
 const isUpdatingEvent = ref(false);
+const shiftsToDelete = ref([]);
 
 const toggleShiftCategory = (id) => {
     const idx = shiftForm.value.categoryIds.indexOf(id);
@@ -1083,7 +1081,11 @@ const loadEvents = async () => {
         }
 
         if (selectedEvent.value) {
-            selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
+            const updated = events.value.find(e => e.id === selectedEvent.value.id);
+            if (updated) {
+                selectedEvent.value = updated;
+                currentShifts.value = (updated.shifts || []).filter(s => !shiftsToDelete.value.includes(s.id));
+            }
         }
         evaluateShowPastEventsDefault();
     } catch (error) {
@@ -1177,6 +1179,7 @@ const openEdit = async (event) => {
 const closeEdit = () => {
     const evId = editingEvent.value?.id;
     editingEvent.value = null;
+    shiftsToDelete.value = [];
     resetShiftForm();
     if (evId) {
         const ev = events.value.find(e => e.id === evId);
@@ -1212,6 +1215,18 @@ const updateEvent = async () => {
             method: 'PUT',
             body: JSON.stringify(payload)
         });
+        
+        // Delete the deferred shifts after event update succeeds
+        if (shiftsToDelete.value.length > 0) {
+            for (const shiftId of shiftsToDelete.value) {
+                try {
+                    await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' });
+                } catch (delErr) {
+                    console.error(`Fehler beim Löschen des Dienstes ${shiftId}:`, delErr);
+                }
+            }
+            shiftsToDelete.value = [];
+        }
         
         closeEdit();
         await loadEvents();
@@ -1322,7 +1337,26 @@ const saveShift = async () => {
         if (selectedEvent.value && selectedEvent.value.id === activeEv.id) {
             selectedEvent.value = { ...updatedEvent };
         }
-        currentShifts.value = [...(updatedEvent.shifts || updatedEvent.Shifts || [])];
+        
+        // Preserve helper lists for unchanged shifts to fix Bug 2 when saving/editing a shift
+        const newShifts = (updatedEvent.shifts || updatedEvent.Shifts || []).filter(s => !shiftsToDelete.value.includes(s.id));
+        for (const ns of newShifts) {
+            const existing = currentShifts.value.find(s => s.id === ns.id);
+            if (existing && existing.helperList) {
+                ns.helperList = existing.helperList;
+            } else {
+                try {
+                    const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${ns.id}`, {
+                        headers: { Authorization: getAuthHeader() }
+                    });
+                    ns.helperList = helpers;
+                } catch (helperErr) {
+                    console.error(`Fehler beim Laden der Helfer für Dienst ${ns.id}:`, helperErr);
+                    ns.helperList = [];
+                }
+            }
+        }
+        currentShifts.value = newShifts;
 
         loadEvents();
     } catch (error) {
@@ -1330,26 +1364,15 @@ const saveShift = async () => {
     }
 };
 
-const deleteShift = async (shiftId) => {
+const deleteShift = (shiftId) => {
     if (!confirm("Dienst löschen?")) return;
-    const activeEv = editingEvent.value || selectedEvent.value;
-    if (!activeEv) return;
-    try {
-        await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' });
-
-        const updatedEvent = await $fetch(`${config.public.apiBase}/events/${activeEv.id}`, {
-            params: { includeShifts: true },
-            headers: { Authorization: getAuthHeader() }
-        });
-
-        if (selectedEvent.value && selectedEvent.value.id === activeEv.id) {
-            selectedEvent.value = { ...updatedEvent };
-        }
-        currentShifts.value = [...(updatedEvent.shifts || updatedEvent.Shifts || [])];
-
-        await loadEvents();
-    } catch (error) {
-        alert("Fehler beim Löschen des Dienstes.");
+    
+    // Remove from currentShifts in memory to defer delete
+    currentShifts.value = currentShifts.value.filter(s => s.id !== shiftId);
+    
+    // Track for deletion on save
+    if (shiftId) {
+        shiftsToDelete.value.push(shiftId);
     }
 };
 
