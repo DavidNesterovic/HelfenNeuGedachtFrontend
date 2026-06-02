@@ -36,7 +36,7 @@
               {{ event.title }}
             </h3>
 
-            <p class="mt-2 text-base text-indigo-600 break-words font-medium">
+            <p @click="openOrgDetails(event.organizationId)" class="mt-2 text-base text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
               {{ organizationLabel }}
             </p>
 
@@ -122,6 +122,12 @@
         </div>
       </div>
     </div>
+
+    <OrganizationPopup
+      :show="showOrgPopup"
+      :orgId="selectedOrgId"
+      @close="closeOrgPopup"
+    />
   </div>
 </template>
 
@@ -140,6 +146,20 @@ const eventId = route.params.id
 const pending = ref(true)
 const error = ref(false)
 const event = ref(null)
+
+const showOrgPopup = ref(false)
+const selectedOrgId = ref(null)
+
+const openOrgDetails = (orgId) => {
+  if (!orgId) return
+  selectedOrgId.value = orgId
+  showOrgPopup.value = true
+}
+
+const closeOrgPopup = () => {
+  showOrgPopup.value = false
+  selectedOrgId.value = null
+}
 const interestedShiftIds = ref(new Set())
 const submittingShiftIds = reactive(new Set())
 

@@ -16,7 +16,7 @@
           </NuxtLink>
         </h3>
 
-        <p class="mt-2 text-base sm:text-[17px] text-indigo-600 break-words">
+        <p @click="emit('show-organization', event.organizationId)" class="mt-2 text-base sm:text-[17px] text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
           {{ organizationLabel }}
         </p>
 
@@ -174,6 +174,7 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['show-organization'])
 const config = useRuntimeConfig()
 const showShifts = ref(false)
 

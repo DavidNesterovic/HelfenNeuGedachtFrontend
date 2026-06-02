@@ -79,11 +79,11 @@
           >
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <!-- User Avatar Placeholder -->
-              <div class="w-10 h-10 bg-orange-100 text-orange-600 flex items-center justify-center rounded-full shrink-0 font-bold text-sm">
+              <div @click="fetchAndShowUserDetails(p.userId)" class="w-10 h-10 bg-orange-100 text-orange-600 flex items-center justify-center rounded-full shrink-0 font-bold text-sm cursor-pointer hover:bg-orange-200 transition-colors" title="Profil anzeigen">
                 {{ getInitials(p.userName) }}
               </div>
               <div class="min-w-0">
-                <div class="font-bold text-gray-900 truncate">{{ p.userName }}</div>
+                <div @click="fetchAndShowUserDetails(p.userId)" class="font-bold text-gray-900 truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ p.userName }}</div>
                 <div class="text-sm text-gray-500 truncate">
                   <span class="font-medium text-gray-700">{{ p.shiftName }}</span>
                   <span class="mx-1.5 text-gray-300">·</span>
@@ -236,6 +236,93 @@
         </ul>
       </div>
     </main>
+
+    <!-- User Details Popup -->
+    <transition name="fade">
+      <div v-if="showUserPopup"
+        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="closeUserPopup">
+        <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-gray-100 flex flex-col transform transition-all duration-300 scale-100">
+          <!-- Header -->
+          <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Benutzerprofil</h3>
+            <button @click="closeUserPopup" class="text-gray-400 hover:text-gray-600 transition-colors">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                  d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="p-6 flex flex-col items-center">
+            <!-- Loading State -->
+            <div v-if="loadingUserDetail" class="flex flex-col items-center py-8 space-y-3">
+              <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-sm text-gray-500 font-semibold">Lade Benutzerdaten...</span>
+            </div>
+
+            <!-- Error State -->
+            <div v-else-if="userDetailError" class="text-center py-6 text-red-500 font-semibold space-y-2">
+              <svg class="w-12 h-12 text-red-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p class="text-sm">{{ userDetailError }}</p>
+              <button @click="closeUserPopup" class="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-bold transition">Schließen</button>
+            </div>
+
+            <!-- Data Display -->
+            <div v-else-if="selectedUserDetail" class="w-full space-y-6">
+              <!-- User Avatar Info -->
+              <div class="flex flex-col items-center pb-4 border-b border-gray-100">
+                <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-600 font-black text-2xl flex items-center justify-center mb-3 shadow-inner">
+                  {{ selectedUserDetail.userName ? selectedUserDetail.userName.substring(0, 2).toUpperCase() : 'U' }}
+                </div>
+                <h4 class="text-lg font-bold text-gray-900">{{ selectedUserDetail.userName }}</h4>
+                <a :href="'mailto:' + selectedUserDetail.email" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1 font-semibold">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {{ selectedUserDetail.email }}
+                </a>
+              </div>
+
+              <!-- User Stats / Info Grid -->
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
+                  <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Punkte</span>
+                  <span class="text-lg font-black text-amber-500 mt-1 block flex items-center justify-center gap-1">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    {{ selectedUserDetail.points }}
+                  </span>
+                </div>
+                <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
+                  <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Einsätze</span>
+                  <span class="text-lg font-black text-gray-800 mt-1 block">{{ selectedUserDetail.totalParticipations }}</span>
+                </div>
+              </div>
+
+              <!-- Additional Info -->
+              <div class="space-y-3 bg-gray-50 p-4 border border-gray-100 rounded-xl">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-semibold text-gray-500">Letzter Einsatz</span>
+                  <span class="font-bold text-gray-700">
+                    {{ selectedUserDetail.lastParticipationDate ? formatDate(selectedUserDetail.lastParticipationDate) : 'Nie' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <button @click="closeUserPopup" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition text-sm shadow-sm">
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -251,6 +338,42 @@ const shiftsCount = ref(0);
 const upcomingEvents = ref([]);
 const pendingParticipations = ref([]);
 const isLoading = ref(true);
+
+const showUserPopup = ref(false);
+const loadingUserDetail = ref(false);
+const userDetailError = ref(null);
+const selectedUserDetail = ref(null);
+
+const formatDate = (date) => {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const fetchAndShowUserDetails = async (userId) => {
+  if (!userId) return;
+  showUserPopup.value = true;
+  loadingUserDetail.value = true;
+  userDetailError.value = null;
+  selectedUserDetail.value = null;
+  
+  try {
+    const data = await $fetch(`${config.public.apiBase}/user/${userId}`, {
+      headers: { Authorization: getAuthHeader() }
+    });
+    selectedUserDetail.value = data;
+  } catch (error) {
+    console.error("Fehler beim Laden der Benutzerdetails:", error);
+    userDetailError.value = "Benutzerdetails konnten nicht geladen werden.";
+  } finally {
+    loadingUserDetail.value = false;
+  }
+};
+
+const closeUserPopup = () => {
+  showUserPopup.value = false;
+  selectedUserDetail.value = null;
+  userDetailError.value = null;
+};
 
 // Event-Promotion (Push E-Mail)
 const pushingEventId = ref(null);
