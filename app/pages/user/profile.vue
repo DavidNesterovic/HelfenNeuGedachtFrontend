@@ -254,6 +254,14 @@ const userMe = ref(null)
 const userInfo = getUserInfo()
 const userName = computed(() => userMe.value?.userName ?? userMe.value?.username ?? userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
 
+const formattedDateOfBirth = computed(() => {
+  const dob = userMe.value?.dateOfBirth
+  if (!dob) return ''
+  const date = new Date(dob)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+})
+
 const completedParticipations = computed(() =>
   participations.value.filter(p => p.status === 'Completed')
 )
