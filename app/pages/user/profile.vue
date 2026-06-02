@@ -1,15 +1,28 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 py-5 sm:px-6 lg:px-8">
-    
+
     <div class="-mx-4 -mt-5 bg-blue-600 px-4 pt-6 pb-6 sm:mx-0 sm:mt-0 sm:rounded-2xl sm:shadow-md">
       <div class="max-w-3xl sm:mx-auto lg:max-w-none lg:flex lg:items-center lg:justify-between lg:gap-8">
-        
+
         <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-full bg-blue-400/40 flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" class="h-8 w-8 text-white" fill="currentColor">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-            </svg>
-          </div>
+          <ImageUploadCrop :circular="true" :current-url="avatarUrl" @change="handleAvatarFile">
+          <template #trigger="{ open }">
+            <button type="button" @click="open" class="relative group shrink-0">
+              <div class="w-14 h-14 rounded-full overflow-hidden bg-blue-400/40 flex items-center justify-center">
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                <svg v-else viewBox="0 0 24 24" class="h-8 w-8 text-white" fill="currentColor">
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                </svg>
+              </div>
+              <div class="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </button>
+          </template>
+        </ImageUploadCrop>
           <div>
             <p class="text-sm font-medium text-white/70">Dein Profil</p>
             <p class="text-xl font-semibold text-white leading-tight mt-0.5">{{ userName }}</p>
@@ -82,7 +95,7 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 md:gap-x-6 lg:gap-x-8">
-      
+
       <div class="mt-6">
         <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Auszeichnungen</h2>
         <div class="space-y-3">
@@ -246,6 +259,7 @@ import { getAuthHeader, getUserInfo, logout } from '~/assets/utils/auth.js'
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
 const config = useRuntimeConfig()
+const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const pending = ref(true)
 const participations = ref([])
 const notifications = ref(true)
@@ -253,6 +267,25 @@ const userMe = ref(null)
 
 const userInfo = getUserInfo()
 const userName = computed(() => userMe.value?.userName ?? userMe.value?.username ?? userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
+const avatarUrl = computed(() => userMe.value?.avatarUrl ? `${apiBase.value}${userMe.value.avatarUrl}` : null)
+
+const handleAvatarFile = async (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  try {
+    await $fetch(`${config.public.apiBase}/User/avatar`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader() },
+      body: formData,
+    })
+    const updated = await $fetch(`${config.public.apiBase}/User/me`, {
+      headers: { Authorization: getAuthHeader() },
+    })
+    userMe.value = updated
+  } catch (e) {
+    console.error('Fehler beim Hochladen des Profilbilds:', e)
+  }
+}
 
 const formattedDateOfBirth = computed(() => {
   const dob = userMe.value?.dateOfBirth

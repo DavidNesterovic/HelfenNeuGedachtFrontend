@@ -10,6 +10,6 @@ export default defineNuxtConfig({
     }
   },
   build: {
-    transpile: ['@microsoft/signalr']
+    transpile: ['@microsoft/signalr', 'vue-advanced-cropper']
   }
 })

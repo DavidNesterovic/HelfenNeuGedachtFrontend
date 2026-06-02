@@ -32,6 +32,10 @@
                                 class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                 required></textarea>
                         </div>
+                        <div class="flex flex-col md:col-span-2">
+                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Bild <span class="font-normal normal-case text-gray-400">(optional)</span></label>
+                            <ImageUploadCrop :aspect-ratio="16/9" @change="f => createImageFile = f" @clear="createImageFile = null" />
+                        </div>
                         <div class="flex flex-col">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
                             <input v-model="newEvent.location" placeholder="Marktplatz"
@@ -188,7 +192,17 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100 text-sm">
                                 <tr v-for="event in upcomingEventsList" :key="event.id" class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 font-bold text-gray-900">{{ event.title }}</td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <img v-if="event.imageUrl" :src="`${apiBase}${event.imageUrl}`" :alt="event.title" class="w-10 h-10 rounded-lg object-cover shrink-0" />
+                                            <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                                                <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <span class="font-bold text-gray-900">{{ event.title }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 text-gray-600">{{ event.location }}</td>
                                     <td class="px-6 py-4 text-center text-gray-600">
                                         {{ formatDate(event.startDate) }}
@@ -282,7 +296,17 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100 text-sm">
                                 <tr v-for="event in pastEventsList" :key="event.id" class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4 font-bold text-gray-900 opacity-75">{{ event.title }}</td>
+                                    <td class="px-6 py-4 opacity-75">
+                                        <div class="flex items-center gap-3">
+                                            <img v-if="event.imageUrl" :src="`${apiBase}${event.imageUrl}`" :alt="event.title" class="w-10 h-10 rounded-lg object-cover shrink-0" />
+                                            <div v-else class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                                                <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <span class="font-bold text-gray-900">{{ event.title }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4 text-gray-600 opacity-75">{{ event.location }}</td>
                                     <td class="px-6 py-4 text-center text-gray-600 opacity-75">
                                         {{ formatDate(event.startDate) }}
@@ -347,7 +371,10 @@
                 <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
                     <!-- Left Side: Stammdaten (Read-Only) -->
                     <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200 space-y-6">
-                        <div>                            
+                        <div v-if="selectedEvent.imageUrl" class="-mx-6 -mt-6 mb-2">
+                            <img :src="`${apiBase}${selectedEvent.imageUrl}`" :alt="selectedEvent.title" class="w-full h-48 object-cover" />
+                        </div>
+                        <div>
                             <div class="space-y-4">
                                 <div>
                                     <span class="block text-xs font-bold text-gray-400 uppercase">Titel</span>
@@ -440,7 +467,13 @@
                                             </div>
                                             <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
                                                 class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
-                                                <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
+                                                <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                    class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-slate-200" />
+                                                <div v-else class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-slate-400" fill="currentColor">
+                                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                    </svg>
+                                                </div>
                                                 <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                             </div>
                                         </template>
@@ -454,7 +487,13 @@
                                             </div>
                                             <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
                                                 class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700 min-w-0">
-                                                <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
+                                                <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                    class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-amber-200" />
+                                                <div v-else class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-amber-400" fill="currentColor">
+                                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                    </svg>
+                                                </div>
                                                 <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                             </div>
                                         </template>
@@ -468,7 +507,13 @@
                                             </div>
                                             <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
                                                 class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
-                                                <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                                                <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                    class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-green-200" />
+                                                <div v-else class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-green-500" fill="currentColor">
+                                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                    </svg>
+                                                </div>
                                                 <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                             </div>
                                         </template>
@@ -518,6 +563,10 @@
                                 <textarea v-model="editForm.description" rows="4"
                                     class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                     required></textarea>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Bild</label>
+                                <ImageUploadCrop :current-url="editImageCurrentUrl" :aspect-ratio="16/9" @change="f => editImageFile = f" />
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
@@ -667,7 +716,13 @@
                                             </div>
                                             <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
                                                 class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
-                                                <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
+                                                <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                    class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-slate-200" />
+                                                <div v-else class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-slate-400" fill="currentColor">
+                                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                    </svg>
+                                                </div>
                                                 <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                             </div>
                                         </template>
@@ -682,7 +737,13 @@
                                             <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
                                                 class="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
                                                 <div class="flex items-center gap-2 text-sm text-gray-700 min-w-0">
-                                                    <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
+                                                    <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                        class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-amber-200" />
+                                                    <div v-else class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                                        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-amber-400" fill="currentColor">
+                                                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                        </svg>
+                                                    </div>
                                                     <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                                 </div>
                                                 <div class="flex gap-1 shrink-0 ml-2">
@@ -709,7 +770,13 @@
                                             </div>
                                             <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
                                                 class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
-                                                <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                                                <img v-if="helper.avatarUrl" :src="`${apiBase}${helper.avatarUrl}`" :alt="helper.userName"
+                                                    class="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-green-200" />
+                                                <div v-else class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-green-500" fill="currentColor">
+                                                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                                    </svg>
+                                                </div>
                                                 <span @click="fetchAndShowUserDetails(helper.userId)" class="truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ helper.userName }}</span>
                                             </div>
                                         </template>
@@ -826,6 +893,7 @@ import { getAuthHeader, logout, authenticatedFetch, getUserInfo } from '../../as
 definePageMeta({ middleware: 'auth' })
 
 const config = useRuntimeConfig();
+const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const events = ref([]);
 const isLoading = ref(true);
 
@@ -1021,6 +1089,25 @@ const editForm = ref({ title: '', location: '', startDate: '', endDate: '', desc
 const isUpdatingEvent = ref(false);
 const shiftsToDelete = ref([]);
 
+// Image upload states
+const createImageFile = ref(null);
+const editImageFile = ref(null);
+
+const editImageCurrentUrl = computed(() => {
+    if (!editingEvent.value?.imageUrl) return null;
+    return `${apiBase.value}${editingEvent.value.imageUrl}`;
+});
+
+const uploadEventImage = async (eventId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await $fetch(`${config.public.apiBase}/events/${eventId}/image`, {
+        method: 'POST',
+        headers: { Authorization: getAuthHeader() },
+        body: formData,
+    });
+};
+
 const showUserPopup = ref(false);
 const loadingUserDetail = ref(false);
 const userDetailError = ref(null);
@@ -1212,12 +1299,17 @@ const saveEvent = async () => {
             organizationId: parseInt(user.OrganizationId),
             status: 0 // Default to Planned
         };
-        await authenticatedFetch(`${config.public.apiBase}/events`, {
+        const response = await authenticatedFetch(`${config.public.apiBase}/events`, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
+        const createdEvent = await response.json();
+        if (createImageFile.value && createdEvent?.id) {
+            await uploadEventImage(createdEvent.id, createImageFile.value);
+        }
         showForm.value = false;
         newEvent.value = { title: '', location: '', startDate: '', endDate: '', description: '' };
+        createImageFile.value = null;
         await loadEvents();
     } catch (error) {
         alert("Fehler beim Speichern.");
@@ -1246,6 +1338,7 @@ const formatForDateTimeInput = (dateString) => {
 };
 
 const openEdit = async (event) => {
+    editImageFile.value = null;
     editingEvent.value = { ...event };
     editForm.value = {
         title: event.title || '',
@@ -1323,7 +1416,11 @@ const updateEvent = async () => {
             method: 'PUT',
             body: JSON.stringify(payload)
         });
-        
+        if (editImageFile.value) {
+            await uploadEventImage(editingEvent.value.id, editImageFile.value);
+            editImageFile.value = null;
+        }
+
         // Delete the deferred shifts after event update succeeds
         if (shiftsToDelete.value.length > 0) {
             for (const shiftId of shiftsToDelete.value) {
