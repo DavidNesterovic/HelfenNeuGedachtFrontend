@@ -9,6 +9,7 @@
       <BottomNav />
     </div>
 
+    <AppSnackbar />
   </div>
 </template>
 

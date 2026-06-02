@@ -40,7 +40,12 @@
       >
         <NuxtLink :to="p.eventId ? `/event/${p.eventId}` : '#'" class="flex gap-4 items-start">
           <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-100">
-            <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img v-if="p.shiftImageUrl" :src="`${apiBase}${p.shiftImageUrl}`" :alt="p.shiftName" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <div v-else class="h-full w-full flex items-center justify-center">
+              <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
           </div>
           <div class="min-w-0 flex-1">
             <h3 class="text-base font-semibold text-slate-900 truncate leading-snug group-hover:text-blue-600 transition-colors">
@@ -99,7 +104,11 @@ import { getAuthHeader } from '~/assets/utils/auth.js'
 
 definePageMeta({ layout: 'user', middleware: 'auth' })
 
+const { refresh: refreshCounts } = useParticipationCounts()
+const { show: showSnack } = useSnackbar()
+
 const config = useRuntimeConfig()
+const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const pending = ref(true)
 const participations = ref([])
 
@@ -151,6 +160,8 @@ const applyForShift = async (p) => {
       params: { shiftId: p.shiftId, status: 4 },
     })
     participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+    showSnack('Anmeldung gesendet', { type: 'success' })
+    refreshCounts()
   } catch (e) {
     console.error(e)
   }
@@ -164,6 +175,8 @@ const removeInterest = async (p) => {
       params: { shiftId: p.shiftId },
     })
     participations.value = participations.value.filter(x => x.shiftId !== p.shiftId)
+    showSnack('Vormerkung entfernt')
+    refreshCounts()
   } catch (e) {
     console.error(e)
   }
