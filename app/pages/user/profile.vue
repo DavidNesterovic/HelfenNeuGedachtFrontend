@@ -12,6 +12,7 @@
         </div>
         <div>
           <p class="text-lg font-semibold text-white leading-tight">{{ userName }}</p>
+          <p v-if="formattedDateOfBirth" class="text-xs text-white/60 mt-0.5">geb. {{ formattedDateOfBirth }}</p>
           <span class="mt-1 inline-block rounded-full bg-amber-500 text-white text-xs font-semibold px-2.5 py-0.5">
             {{ currentLevel }}
           </span>
@@ -250,6 +251,14 @@ const userMe = ref(null)
 
 const userInfo = getUserInfo()
 const userName = computed(() => userMe.value?.userName ?? userMe.value?.username ?? userInfo?.name ?? userInfo?.unique_name ?? userInfo?.email ?? 'Benutzer')
+
+const formattedDateOfBirth = computed(() => {
+  const dob = userMe.value?.dateOfBirth
+  if (!dob) return ''
+  const date = new Date(dob)
+  if (isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+})
 
 const completedParticipations = computed(() =>
   participations.value.filter(p => p.status === 'Completed')

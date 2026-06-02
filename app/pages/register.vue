@@ -45,6 +45,20 @@
         </div>
 
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="dateOfBirth">
+            Geburtsdatum
+          </label>
+          <input
+            id="dateOfBirth"
+            v-model="dateOfBirth"
+            type="date"
+            :max="maxDateOfBirth"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+            required
+          >
+        </div>
+
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5" for="password">
             Passwort
           </label>
@@ -70,6 +84,35 @@
             placeholder="Passwort wiederholen"
             required
           >
+        </div>
+
+        <!-- Kategorie-Auswahl (optional) -->
+        <div v-if="categories.length > 0">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Interessen <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <div class="flex flex-wrap gap-2">
+            <label
+              v-for="cat in categories"
+              :key="cat.id"
+              class="inline-flex items-center gap-1.5 cursor-pointer select-none rounded-full border px-3 py-1.5 text-sm transition"
+              :class="selectedCategories.includes(cat.id)
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'"
+            >
+              <input
+                type="checkbox"
+                :value="cat.id"
+                v-model="selectedCategories"
+                class="sr-only"
+              >
+              <span
+                v-if="selectedCategories.includes(cat.id)"
+                class="text-blue-500 text-xs"
+              >✓</span>
+              {{ cat.name }}
+            </label>
+          </div>
         </div>
 
         <button
@@ -100,15 +143,28 @@
 </template>
 
 <script setup lang="ts">
+import { saveToken, getHomeRoute } from '~/assets/utils/auth'
+
 definePageMeta({ layout: false })
+
+const config = useRuntimeConfig()
 
 const username = ref('')
 const email = ref('')
+const dateOfBirth = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
+const selectedCategories = ref<number[]>([])
+const categories = ref<{ id: number; name: string }[]>([])
 const errorMessage = ref('')
 const loading = ref(false)
 let errorTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Maximales Geburtsdatum = heute (muss in der Vergangenheit liegen)
+const maxDateOfBirth = computed(() => {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+})
 
 const showError = (message: string) => {
   errorMessage.value = message
@@ -116,20 +172,42 @@ const showError = (message: string) => {
   errorTimeout = setTimeout(() => { errorMessage.value = '' }, 5000)
 }
 
+// Kategorien beim Laden der Seite abrufen
+const loadCategories = async () => {
+  try {
+    const data = await $fetch<{ id: number; name: string }[]>(
+      `${config.public.apiBase}/categories`
+    )
+    categories.value = data || []
+  } catch (e) {
+    // Kategorien sind optional – Fehler still ignorieren
+    console.warn('Kategorien konnten nicht geladen werden:', e)
+  }
+}
+
+onMounted(loadCategories)
+
 const register = async () => {
   errorMessage.value = ''
 
   const trimmedUsername = username.value.trim()
   const trimmedEmail = email.value.trim()
 
-  if (!trimmedUsername || !trimmedEmail || !password.value || !passwordConfirm.value) {
-    showError('Bitte füllen Sie alle Felder aus.')
+  if (!trimmedUsername || !trimmedEmail || !dateOfBirth.value || !password.value || !passwordConfirm.value) {
+    showError('Bitte füllen Sie alle Pflichtfelder aus.')
     return
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(trimmedEmail)) {
     showError('Bitte geben Sie eine gültige E-Mail-Adresse ein.')
+    return
+  }
+
+  // Geburtsdatum muss in der Vergangenheit liegen
+  const dob = new Date(dateOfBirth.value)
+  if (isNaN(dob.getTime()) || dob >= new Date()) {
+    showError('Bitte geben Sie ein gültiges Geburtsdatum ein.')
     return
   }
 
@@ -146,23 +224,31 @@ const register = async () => {
   loading.value = true
 
   try {
-    const config = useRuntimeConfig()
+    const body: Record<string, unknown> = {
+      username: trimmedUsername,
+      email: trimmedEmail,
+      password: password.value,
+      dateOfBirth: dateOfBirth.value, // ISO-Format "YYYY-MM-DD"
+    }
+
+    if (selectedCategories.value.length > 0) {
+      body.categoryPreferenceIds = selectedCategories.value
+    }
 
     const response = await $fetch<{
       success: boolean
-      status?: string
       message?: string
+      token?: string
+      expiration?: string
     }>(`${config.public.apiBase}/authenticate/register`, {
       method: 'POST',
-      body: {
-        username: trimmedUsername,
-        email: trimmedEmail,
-        password: password.value,
-      },
+      body,
     })
 
-    if (response.success) {
-      await navigateTo('/login?registered=1')
+    if (response.success && response.token) {
+      // Auto-Login: Token speichern und direkt weiterleiten
+      saveToken(response.token)
+      await navigateTo(getHomeRoute())
       return
     }
 
