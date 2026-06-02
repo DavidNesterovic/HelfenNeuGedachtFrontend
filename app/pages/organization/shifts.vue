@@ -413,7 +413,14 @@ onMounted(() => {
     loadData();
 });
 
-const toLocalDatetime = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : '';
+const toLocalDatetime = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16);
+};
 
 const openCreateModal = () => {
     shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', eventId: '', categoryIds: [] };
