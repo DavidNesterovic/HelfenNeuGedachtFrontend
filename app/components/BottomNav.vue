@@ -1,5 +1,5 @@
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white">
+  <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white nav-safe">
     <div class="mx-auto flex max-w-md items-center justify-around px-3 py-3">
       <NuxtLink
         v-for="item in items"
@@ -54,3 +54,9 @@ onMounted(() => {
   refreshUser()
 })
 </script>
+
+<style scoped>
+.nav-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+</style>
