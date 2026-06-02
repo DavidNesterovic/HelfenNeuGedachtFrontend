@@ -2,17 +2,17 @@
   <div>
     <div class="-mx-4 -mt-5 bg-white px-4 pt-5 pb-4 border-b border-slate-100">
       <h1 class="text-[17px] font-semibold text-slate-900">Meine Einsätze</h1>
-      <p class="mt-0.5 text-[13px] text-indigo-500">Deine Planung & Übersicht</p>
+      <p class="mt-0.5 text-[13px] text-blue-500">Deine Planung & Übersicht</p>
     </div>
 
     <div class="mt-6">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Anstehend</h2>
 
-      <div v-if="pending" class="rounded-2xl bg-white p-5 shadow-sm border border-indigo-100 text-sm text-slate-400">
+      <div v-if="pending" class="rounded-2xl bg-white p-5 shadow-sm border border-blue-100 text-sm text-slate-400">
         Wird geladen...
       </div>
 
-      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm border border-indigo-100 text-center">
+      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm border border-blue-100 text-center">
         <div class="flex justify-center mb-4">
           <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="h-7 w-7 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -21,7 +21,7 @@
           </div>
         </div>
         <p class="font-semibold text-slate-900 text-[15px]">Keine anstehenden Einsätze</p>
-        <p class="mt-1.5 text-sm text-indigo-500">Du hast dich noch für keinen Einsatz angemeldet.</p>
+        <p class="mt-1.5 text-sm text-blue-500">Du hast dich noch für keinen Einsatz angemeldet.</p>
         <NuxtLink
           to="/events"
           class="mt-5 inline-block rounded-2xl bg-blue-600 px-8 py-3 text-white font-medium text-[14px]"
@@ -87,13 +87,13 @@
       </div>
     </div>
 
-    <div class="mt-8 rounded-2xl bg-indigo-50 px-4 py-4 flex gap-3 items-start">
-      <div class="shrink-0 w-9 h-9 rounded-full border-2 border-indigo-400 flex items-center justify-center">
-        <span class="text-indigo-500 font-bold text-sm leading-none">!</span>
+    <div class="mt-8 rounded-2xl bg-blue-50 px-4 py-4 flex gap-3 items-start">
+      <div class="shrink-0 w-9 h-9 rounded-full border-2 border-blue-400 flex items-center justify-center">
+        <span class="text-blue-500 font-bold text-sm leading-none">!</span>
       </div>
       <div>
         <p class="font-medium text-slate-900 text-[14px]">Absagen ohne Sorge</p>
-        <p class="mt-1 text-[13px] text-indigo-500 leading-relaxed">
+        <p class="mt-1 text-[13px] text-blue-500 leading-relaxed">
           Das Leben ist flexibel – wir auch. Wenn etwas dazwischenkommt, sag einfach rechtzeitig ab. Kein Problem!
         </p>
       </div>

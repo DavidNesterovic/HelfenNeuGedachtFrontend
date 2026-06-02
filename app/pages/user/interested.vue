@@ -46,7 +46,7 @@
             <h3 class="text-base font-semibold text-slate-900 truncate leading-snug group-hover:text-blue-600 transition-colors">
               {{ p.eventName ?? p.shiftName }}
             </h3>
-            <p class="mt-0.5 text-sm font-medium text-indigo-600 truncate">{{ p.shiftName }}</p>
+            <p class="mt-0.5 text-sm font-medium text-blue-600 truncate">{{ p.shiftName }}</p>
             
             <div class="mt-3 flex flex-col gap-1 text-xs text-slate-500">
               <div v-if="p.eventStartDate" class="flex items-center gap-1.5 truncate">

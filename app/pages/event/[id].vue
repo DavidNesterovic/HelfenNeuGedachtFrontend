@@ -36,7 +36,7 @@
               {{ event.title }}
             </h3>
 
-            <p @click="openOrgDetails(event.organizationId)" class="mt-2 text-base text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
+            <p @click="openOrgDetails(event.organizationId !== undefined ? event.organizationId : event.OrganizationId)" class="mt-2 text-base text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
               {{ organizationLabel }}
             </p>
 
@@ -167,9 +167,12 @@ const imageUrl = computed(() =>
   `https://picsum.photos/seed/event-${eventId}/600/400`
 )
 
-const organizationLabel = computed(() =>
-  event.value ? `Organisation #${event.value.organizationId}` : ''
-)
+const organizationName = ref('')
+const organizationLabel = computed(() => {
+  const name = organizationName.value || event.value?.organizationName || event.value?.OrganizationName
+  const id = event.value ? (event.value.organizationId !== undefined ? event.value.organizationId : event.value.OrganizationId) : ''
+  return name || (id ? `Organisation #${id}` : '')
+})
 
 const helperLabel = computed(() => {
   if (!event.value) return ''
@@ -274,6 +277,20 @@ const loadEventData = async () => {
     ])
 
     event.value = eventRes
+    
+    const oId = event.value ? (event.value.organizationId !== undefined ? event.value.organizationId : event.value.OrganizationId) : null
+    if (oId) {
+      try {
+        const orgRes = await $fetch(`${config.public.apiBase}/organization/${oId}`, {
+          headers: { Authorization: getAuthHeader() },
+        })
+        if (orgRes && orgRes.name) {
+          organizationName.value = orgRes.name
+        }
+      } catch (orgErr) {
+        console.error("Error loading organization details:", orgErr)
+      }
+    }
     
     // Normalize status
     const rawStatus = event.value.eventStatus !== undefined ? event.value.eventStatus :

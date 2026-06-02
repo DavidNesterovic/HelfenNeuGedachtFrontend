@@ -96,7 +96,7 @@
                 @click="confirmParticipation(p)"
                 :disabled="p._updating"
                 class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold rounded-lg transition-all
-                  bg-green-100 text-green-700 hover:bg-green-200 hover:shadow-sm
+                  bg-blue-100 text-blue-700 hover:bg-blue-200 hover:shadow-sm
                   disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg v-if="p._updating && p._action === 'confirm'" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">

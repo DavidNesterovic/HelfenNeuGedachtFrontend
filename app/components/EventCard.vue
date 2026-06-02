@@ -22,7 +22,7 @@
           </NuxtLink>
         </h3>
 
-        <p @click="emit('show-organization', event.organizationId)" class="mt-2 text-base sm:text-[17px] text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
+        <p @click="emit('show-organization', event.organizationId !== undefined ? event.organizationId : event.OrganizationId)" class="mt-2 text-base sm:text-[17px] text-indigo-600 break-words font-medium cursor-pointer hover:underline hover:text-indigo-800 transition-colors duration-150 inline-block" title="Organisation ansehen">
           {{ organizationLabel }}
         </p>
 
@@ -231,9 +231,11 @@ const imageUrl = computed(() =>
   props.event.imageUrl ? `${apiBase.value}${props.event.imageUrl}` : null
 )
 
-const organizationLabel = computed(() =>
-  props.event.organizationName || `Organisation #${props.event.organizationId}`
-)
+const organizationLabel = computed(() => {
+  const name = props.event.organizationName || props.event.OrganizationName
+  const id = props.event.organizationId !== undefined ? props.event.organizationId : props.event.OrganizationId
+  return name || `Organisation #${id}`
+})
 
 const helperLabel = computed(() =>
   `${props.event.requiredHelpers} Helfer gesucht`

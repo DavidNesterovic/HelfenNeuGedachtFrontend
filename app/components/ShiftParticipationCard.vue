@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-[28px] bg-white p-5 shadow-sm border border-indigo-100">
+  <div class="rounded-[28px] bg-white p-5 shadow-sm border border-blue-100">
     <component
       :is="to ? NuxtLink : 'div'"
       :to="to"
@@ -21,7 +21,7 @@
       </div>
       <div class="min-w-0 flex-1">
         <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ participation.eventName ?? participation.shiftName }}</h3>
-        <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ participation.shiftName }}</p>
+        <p class="mt-1 text-[15px] text-blue-600 truncate">{{ participation.shiftName }}</p>
         <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
           <span v-if="participation.eventStartDate">{{ formatEventDate(participation.eventStartDate) }}</span>
           <span v-if="participation.eventLocation">{{ participation.eventLocation }}</span>

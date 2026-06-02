@@ -648,7 +648,7 @@
                                 <ImageUploadCrop :current-url="shiftImageCurrentUrl" :aspect-ratio="1" height="8rem" @change="f => shiftImageFile = f" @clear="shiftImageFile = null" />
                             </div>
                             <div class="flex gap-2">
-                                <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">{{
+                                <button @click="saveShift" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold">{{
                                     shiftForm.id ? 'Aktualisieren' : 'Dienst speichern' }}</button>
                                 <button @click="resetShiftForm"
                                     class="flex-1 bg-gray-200 text-gray-600 py-2 rounded font-bold text-sm">Abbrechen</button>
@@ -717,7 +717,7 @@
                                                 <div class="flex gap-1 shrink-0 ml-2">
                                                     <button @click="confirmHelper(helper)"
                                                         :disabled="helper._updating"
-                                                        class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded font-semibold hover:bg-green-200 transition-colors disabled:opacity-50">
+                                                        class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded font-semibold hover:bg-blue-200 transition-colors disabled:opacity-50">
                                                         Bestätigen
                                                     </button>
                                                     <button @click="rejectHelper(helper)"
@@ -832,7 +832,7 @@
                             
                             <div class="flex gap-4 pt-4">
                                 <button type="submit" :disabled="isSubmitting"
-                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
                                     {{ isSubmitting ? 'Wird erstellt...' : 'Veranstaltung erstellen' }}
                                 </button>
                                 <button type="button" @click="closeCreateModal"
@@ -913,7 +913,7 @@
                                 <ImageUploadCrop :current-url="shiftImageCurrentUrl" :aspect-ratio="1" height="8rem" @change="f => shiftImageFile = f" @clear="shiftImageFile = null" />
                             </div>
                             <div class="flex gap-2">
-                                <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">
+                                <button @click="saveShift" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold">
                                     {{ shiftForm.id ? 'Aktualisieren' : 'Dienst speichern' }}
                                 </button>
                                 <button @click="resetShiftForm"
