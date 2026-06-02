@@ -190,7 +190,7 @@ const loadEvents = async () => {
   error.value = false
   try {
     const [eventsRes, participationsRes, categoriesRes, preferencesRes] = await Promise.allSettled([
-      $fetch(`${config.public.apiBase}/Events`, { params: { upcoming: true } }),
+      $fetch(`${config.public.apiBase}/Events`, { params: { upcoming: true }, headers: { Authorization: getAuthHeader() } }),
       $fetch(`${config.public.apiBase}/Participation/user`, {
         headers: { Authorization: getAuthHeader() },
       }),
