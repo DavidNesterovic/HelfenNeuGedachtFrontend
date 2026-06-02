@@ -8,7 +8,7 @@
         <p class="text-gray-600">Hier ist Ihre aktuelle Übersicht über den Helfer-Bedarf</p>
       </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:scale-[1.02]">
           <div class="p-4 bg-blue-100 text-blue-600 rounded-lg">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,6 +30,116 @@
           <div>
             <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">Offene Dienste</p>
             <p class="text-3xl font-black text-gray-900">{{ shiftsCount }}</p>
+          </div>
+        </div>
+
+        <!-- Offene Bestätigungen Kachel -->
+        <div 
+          class="p-6 rounded-xl shadow-sm border flex items-center gap-4 transition-transform hover:scale-[1.02]"
+          :class="pendingParticipations.length > 0 
+            ? 'bg-orange-50 border-orange-200' 
+            : 'bg-white border-gray-100'"
+        >
+          <div class="p-4 rounded-lg" :class="pendingParticipations.length > 0 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400'">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold uppercase tracking-wider" :class="pendingParticipations.length > 0 ? 'text-orange-600' : 'text-gray-500'">Offene Bestätigungen</p>
+            <div class="flex items-center gap-2">
+              <p class="text-3xl font-black" :class="pendingParticipations.length > 0 ? 'text-orange-700' : 'text-gray-900'">{{ pendingParticipations.length }}</p>
+              <span v-if="pendingParticipations.length > 0" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white animate-pulse">
+                Aktion nötig
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offene Bestätigungen Sektion -->
+      <div v-if="pendingParticipations.length > 0" class="bg-white p-6 rounded-xl shadow-sm border border-orange-200 mb-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="p-2 bg-orange-100 rounded-lg">
+            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800">Offene Bestätigungen</h3>
+          <span class="text-sm font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">
+            {{ pendingParticipations.length }} wartend
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          <div 
+            v-for="p in pendingParticipations" 
+            :key="`${p.userId}-${p.shiftId}`"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-orange-200 bg-gray-50 hover:bg-orange-50/30 transition-all group"
+          >
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <!-- User Avatar Placeholder -->
+              <div class="w-10 h-10 bg-orange-100 text-orange-600 flex items-center justify-center rounded-full shrink-0 font-bold text-sm">
+                {{ getInitials(p.userName) }}
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold text-gray-900 truncate">{{ p.userName }}</div>
+                <div class="text-sm text-gray-500 truncate">
+                  <span class="font-medium text-gray-700">{{ p.shiftName }}</span>
+                  <span class="mx-1.5 text-gray-300">·</span>
+                  <span>{{ p.eventTitle }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 ml-4">
+              <button 
+                @click="confirmParticipation(p)"
+                :disabled="p._updating"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold rounded-lg transition-all
+                  bg-green-100 text-green-700 hover:bg-green-200 hover:shadow-sm
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg v-if="p._updating && p._action === 'confirm'" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Bestätigen
+              </button>
+              <button 
+                @click="rejectParticipation(p)"
+                :disabled="p._updating"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold rounded-lg transition-all
+                  bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg v-if="p._updating && p._action === 'reject'" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Ablehnen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alles erledigt State (wenn keine offenen Bestätigungen und nicht am Laden) -->
+      <div v-else-if="!isLoading" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-green-100 rounded-lg">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">Keine offenen Bestätigungen</h3>
+            <p class="text-sm text-gray-500">Alle Helfer-Anfragen wurden bearbeitet.</p>
           </div>
         </div>
       </div>
@@ -139,6 +249,7 @@ const config = useRuntimeConfig();
 const eventsCount = ref(0);
 const shiftsCount = ref(0);
 const upcomingEvents = ref([]);
+const pendingParticipations = ref([]);
 const isLoading = ref(true);
 
 // Event-Promotion (Push E-Mail)
@@ -153,6 +264,68 @@ const showToast = (message, type = 'success') => {
   toast.message = message;
   toast.type = type;
   toastTimer = setTimeout(() => { toast.show = false; }, 5000);
+};
+
+// Initialen aus dem Namen generieren
+const getInitials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
+// Offene Bestätigung bestätigen (Status 1 = Confirmed)
+const confirmParticipation = async (participation) => {
+  participation._updating = true;
+  participation._action = 'confirm';
+  try {
+    await $fetch(
+      `${config.public.apiBase}/Participation/status?userId=${participation.userId}&shiftId=${participation.shiftId}&status=1`,
+      {
+        method: 'PUT',
+        headers: { Authorization: getAuthHeader() }
+      }
+    );
+    // Aus der Liste entfernen
+    pendingParticipations.value = pendingParticipations.value.filter(
+      p => !(p.userId === participation.userId && p.shiftId === participation.shiftId)
+    );
+    showToast(`${participation.userName} wurde für „${participation.shiftName}" bestätigt.`, 'success');
+  } catch (error) {
+    console.error('Fehler beim Bestätigen:', error);
+    showToast('Fehler beim Bestätigen. Bitte versuchen Sie es erneut.', 'error');
+  } finally {
+    participation._updating = false;
+    participation._action = null;
+  }
+};
+
+// Offene Bestätigung ablehnen (Status 3 = Rejected)
+const rejectParticipation = async (participation) => {
+  participation._updating = true;
+  participation._action = 'reject';
+  try {
+    await $fetch(
+      `${config.public.apiBase}/Participation/status?userId=${participation.userId}&shiftId=${participation.shiftId}&status=3`,
+      {
+        method: 'PUT',
+        headers: { Authorization: getAuthHeader() }
+      }
+    );
+    // Aus der Liste entfernen
+    pendingParticipations.value = pendingParticipations.value.filter(
+      p => !(p.userId === participation.userId && p.shiftId === participation.shiftId)
+    );
+    showToast(`${participation.userName} wurde für „${participation.shiftName}" abgelehnt.`, 'info');
+  } catch (error) {
+    console.error('Fehler beim Ablehnen:', error);
+    showToast('Fehler beim Ablehnen. Bitte versuchen Sie es erneut.', 'error');
+  } finally {
+    participation._updating = false;
+    participation._action = null;
+  }
 };
 
 const pushEvent = async (event) => {
@@ -246,13 +419,21 @@ const loadDashboardData = async () => {
   try {
     const headers = { Authorization: getAuthHeader() };
     
-    const [eventsRes, shiftsRes] = await Promise.all([
+    const [eventsRes, shiftsRes, pendingRes] = await Promise.all([
       $fetch(`${config.public.apiBase}/events/organization/${userInfo.OrganizationId}`, { headers }),
-      $fetch(`${config.public.apiBase}/shifts`, { headers })
+      $fetch(`${config.public.apiBase}/shifts`, { headers }),
+      $fetch(`${config.public.apiBase}/participation/pending/${userInfo.OrganizationId}`, { headers })
     ]);
 
     eventsCount.value = eventsRes.length;
     shiftsCount.value = shiftsRes.length;
+    
+    // Pending Participations mit reaktiven Hilfsfeldern versehen
+    pendingParticipations.value = (pendingRes || []).map(p => ({
+      ...p,
+      _updating: false,
+      _action: null
+    }));
 
     upcomingEvents.value = eventsRes
       .filter(e => e.startDate)
