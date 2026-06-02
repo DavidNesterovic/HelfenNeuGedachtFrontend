@@ -34,7 +34,7 @@
                         </div>
                         <div class="flex flex-col md:col-span-2">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Bild <span class="font-normal normal-case text-gray-400">(optional)</span></label>
-                            <ImageUploadCrop :aspect-ratio="16/9" @change="f => createImageFile = f" @clear="createImageFile = null" />
+                            <ImageUploadCrop :aspect-ratio="1" @change="f => createImageFile = f" @clear="createImageFile = null" />
                         </div>
                         <div class="flex flex-col">
                             <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
@@ -566,7 +566,7 @@
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Bild</label>
-                                <ImageUploadCrop :current-url="editImageCurrentUrl" :aspect-ratio="16/9" @change="f => editImageFile = f" />
+                                <ImageUploadCrop :current-url="editImageCurrentUrl" :aspect-ratio="1" @change="f => editImageFile = f" />
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
@@ -682,6 +682,10 @@
                                         ]"
                                     >{{ cat.name }}</button>
                                 </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bild <span class="font-normal normal-case text-gray-400">(optional)</span></label>
+                                <ImageUploadCrop :current-url="shiftImageCurrentUrl" :aspect-ratio="1" height="8rem" @change="f => shiftImageFile = f" @clear="shiftImageFile = null" />
                             </div>
                             <div class="flex gap-2">
                                 <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">{{
@@ -1108,6 +1112,24 @@ const uploadEventImage = async (eventId, file) => {
     });
 };
 
+// Shift image upload states
+const shiftImageFile = ref(null);
+
+const shiftImageCurrentUrl = computed(() => {
+    if (!shiftForm.value?.imageUrl) return null;
+    return `${apiBase.value}${shiftForm.value.imageUrl}`;
+});
+
+const uploadShiftImage = async (shiftId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await $fetch(`${config.public.apiBase}/shifts/${shiftId}/image`, {
+        method: 'POST',
+        headers: { Authorization: getAuthHeader() },
+        body: formData,
+    });
+};
+
 const showUserPopup = ref(false);
 const loadingUserDetail = ref(false);
 const userDetailError = ref(null);
@@ -1485,6 +1507,7 @@ const openDetails = async (event) => {
 
 const resetShiftForm = () => {
     showShiftForm.value = false;
+    shiftImageFile.value = null;
     const activeEv = editingEvent.value || selectedEvent.value;
     shiftForm.value = { 
         id: null, 
@@ -1527,10 +1550,19 @@ const saveShift = async () => {
         const url = isEdit ? `${config.public.apiBase}/shifts/${shiftForm.value.id}` : `${config.public.apiBase}/shifts`;
         const payload = { ...shiftForm.value, eventId: activeEv.id };
 
-        await authenticatedFetch(url, {
+        const response = await authenticatedFetch(url, {
             method: isEdit ? 'PUT' : 'POST',
             body: JSON.stringify(payload)
         });
+
+        if (shiftImageFile.value) {
+            let shiftId = shiftForm.value.id;
+            if (!isEdit) {
+                const created = await response.json();
+                shiftId = created?.id;
+            }
+            if (shiftId) await uploadShiftImage(shiftId, shiftImageFile.value);
+        }
 
         resetShiftForm();
 

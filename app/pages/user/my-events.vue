@@ -8,11 +8,11 @@
     <div class="mt-6">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Anstehend</h2>
 
-      <div v-if="pending" class="rounded-2xl bg-white p-5 shadow-sm text-sm text-slate-400">
+      <div v-if="pending" class="rounded-2xl bg-white p-5 shadow-sm border border-indigo-100 text-sm text-slate-400">
         Wird geladen...
       </div>
 
-      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm text-center">
+      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm border border-indigo-100 text-center">
         <div class="flex justify-center mb-4">
           <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="h-7 w-7 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -31,28 +31,13 @@
       </div>
 
       <div v-else class="space-y-3">
-        <div
+        <ShiftParticipationCard
           v-for="p in confirmedParticipations"
           :key="p.shiftId"
-          @click="goToEvent(p.eventId)"
-          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          :participation="p"
+          :to="p.eventId ? `/event/${p.eventId}` : null"
         >
-          <div class="flex gap-4">
-            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
-              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
-              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
-              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
-                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
-                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
-            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+          <template #actions>
             <div class="flex items-center gap-3">
               <button @click.stop="cancelParticipation(p)" class="text-sm text-slate-400 hover:text-red-500 transition-colors">
                 Absagen
@@ -60,8 +45,8 @@
               <span v-if="p.status === 4" class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-1 text-sm font-semibold text-amber-600">Ausstehend</span>
               <span v-else class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">Angemeldet</span>
             </div>
-          </div>
-        </div>
+          </template>
+        </ShiftParticipationCard>
       </div>
     </div>
 
@@ -73,62 +58,32 @@
       </p>
 
       <div v-else-if="completedParticipations.length > 0" class="space-y-3">
-        <div
+        <ShiftParticipationCard
           v-for="p in completedParticipations"
           :key="p.shiftId"
-          @click="goToEvent(p.eventId)"
-          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          :participation="p"
+          :to="p.eventId ? `/event/${p.eventId}` : null"
         >
-          <div class="flex gap-4">
-            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
-              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
-              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
-              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
-                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
-                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
-            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+          <template #actions>
             <span class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-600">✓ Erledigt</span>
-          </div>
-        </div>
+          </template>
+        </ShiftParticipationCard>
       </div>
     </div>
 
     <div v-if="!pending && canceledParticipations.length > 0" class="mt-8">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Abgesagt</h2>
       <div class="space-y-3">
-        <div
+        <ShiftParticipationCard
           v-for="p in canceledParticipations"
           :key="p.shiftId"
-          @click="goToEvent(p.eventId)"
-          class="rounded-[28px] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+          :participation="p"
+          :to="p.eventId ? `/event/${p.eventId}` : null"
         >
-          <div class="flex gap-4">
-            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200">
-              <img :src="`https://picsum.photos/seed/shift-${p.shiftId}/160/160`" :alt="p.shiftName" class="h-full w-full object-cover" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-[17px] leading-tight font-medium text-slate-900 truncate">{{ p.eventName ?? p.shiftName }}</h3>
-              <p class="mt-1 text-[15px] text-indigo-600 truncate">{{ p.shiftName }}</p>
-              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
-                <span v-if="p.eventStartDate">{{ formatEventDate(p.eventStartDate) }}</span>
-                <span v-if="p.eventLocation">{{ p.eventLocation }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-            <span v-if="p.shiftPoints" class="rounded-xl bg-amber-50 px-3 py-1 text-sm text-amber-600">+{{ p.shiftPoints }} Punkte</span>
-            <span v-else class="rounded-xl bg-slate-100 px-3 py-1 text-sm text-slate-500">Einsatz</span>
+          <template #actions>
             <span class="rounded-xl bg-red-50 border border-red-200 px-3 py-1 text-sm font-semibold text-red-600">Abgesagt</span>
-          </div>
-        </div>
+          </template>
+        </ShiftParticipationCard>
       </div>
     </div>
 
@@ -168,26 +123,6 @@ const canceledParticipations = computed(() =>
   participations.value.filter(p => p.status === 3)
 )
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Intl.DateTimeFormat('de-AT', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateStr))
-}
-
-const formatEventDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Intl.DateTimeFormat('de-AT', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateStr))
-}
-
 const fetchParticipations = async () => {
   pending.value = true
   try {
@@ -214,12 +149,6 @@ const cancelParticipation = async (p) => {
     if (entry) entry.status = 3
   } catch (e) {
     console.error(e)
-  }
-}
-
-const goToEvent = (eventId) => {
-  if (eventId) {
-    navigateTo(`/event/${eventId}`)
   }
 }
 

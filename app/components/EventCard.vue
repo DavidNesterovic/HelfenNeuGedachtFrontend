@@ -1,12 +1,18 @@
 <template>
   <div class="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-300">
     <div class="flex flex-col sm:flex-row gap-4">
-      <NuxtLink :to="`/event/${event.id}`" class="relative h-48 sm:h-28 w-full sm:w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-200 block hover:opacity-95 transition-opacity">
+      <NuxtLink :to="`/event/${event.id}`" class="relative h-48 sm:h-28 w-full sm:w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100 block hover:opacity-95 transition-opacity">
         <img
+          v-if="imageUrl"
           :src="imageUrl"
           :alt="event.title"
           class="h-full w-full object-cover"
         >
+        <div v-else class="h-full w-full flex items-center justify-center">
+          <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
       </NuxtLink>
 
       <div class="min-w-0 flex-1">
@@ -82,6 +88,12 @@
           :key="shift.id"
           class="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5"
         >
+          <img
+            v-if="shift.imageUrl"
+            :src="`${apiBase}${shift.imageUrl}`"
+            :alt="shift.name"
+            class="w-10 h-10 rounded-lg object-cover shrink-0"
+          />
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-slate-800 truncate">
               {{ shift.name ?? `Schicht #${shift.id}` }}
@@ -213,8 +225,9 @@ const normalizedStatus = computed(() => {
   return statusMap[statusVal] !== undefined ? statusMap[statusVal] : 0;
 })
 
+const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const imageUrl = computed(() =>
-  `https://picsum.photos/seed/event-${props.event.id}/300/300`
+  props.event.imageUrl ? `${apiBase.value}${props.event.imageUrl}` : null
 )
 
 const organizationLabel = computed(() =>
