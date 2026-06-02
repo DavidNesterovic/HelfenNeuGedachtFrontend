@@ -189,6 +189,7 @@ const props = defineProps({
 const emit = defineEmits(['show-organization'])
 const config = useRuntimeConfig()
 const { refresh: refreshCounts } = useParticipationCounts()
+const { show: showSnack } = useSnackbar()
 const showShifts = ref(false)
 
 const interestedShiftIds = reactive(new Set(props.initialInterestedShiftIds))
@@ -199,11 +200,7 @@ const submittingShiftIds = reactive(new Set())
 const interestedCount = computed(() => interestedShiftIds.size)
 const appliedCount = computed(() => appliedShiftIds.size)
 
-const visibleShifts = computed(() =>
-  (props.event.shifts ?? []).filter(s =>
-    !interestedShiftIds.has(s.id) && !appliedShiftIds.has(s.id) && !confirmedShiftIds.has(s.id)
-  )
-)
+const visibleShifts = computed(() => props.event.shifts ?? [])
 
 const normalizedStatus = computed(() => {
   const statusVal = props.event.eventStatus !== undefined ? props.event.eventStatus :
@@ -291,6 +288,7 @@ const toggleShiftInterest = async (shiftId) => {
         headers: { Authorization: getAuthHeader() },
         params: { shiftId, status: 0 },
       })
+      showSnack('Vorgemerkt', { type: 'success' })
     }
     refreshCounts()
   } catch (e) {
@@ -320,6 +318,7 @@ const applyForShift = async (shiftId) => {
       headers: { Authorization: getAuthHeader() },
       params: { shiftId, status: 4 },
     })
+    showSnack('Anmeldung gesendet', { type: 'success' })
     refreshCounts()
   } catch (e) {
     console.error('Apply request failed:', e)
