@@ -94,7 +94,7 @@
                         v-model="selectedStatusFilter" 
                         class="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition font-semibold"
                     >
-                        <option value="">Alle Status</option>
+                        <option value="">Alle</option>
                         <option value="0">Geplant</option>
                         <option value="1">Findet statt</option>
                         <option value="2">Durchgeführt</option>
@@ -211,8 +211,6 @@
                                         <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
-                                            <button @click="openEdit(event)"
-                                                class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
                                             <button @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
@@ -307,8 +305,6 @@
                                         <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
-                                            <button @click="openEdit(event)"
-                                                class="text-amber-600 hover:text-amber-800">Bearbeiten</button>
                                             <button @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
@@ -324,199 +320,170 @@
             </div>
         </main>
 
+        <!-- Event Details Modal (Read-Only) -->
         <div v-if="selectedEvent"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
-                <div class="p-6 border-b border-gray-200 bg-gray-50">
-                    <div class="flex justify-between items-start mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">{{ selectedEvent.title }}</h2>
+            <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-900">Veranstaltungsdetails</h2>
+                    <div class="flex items-center gap-3">
+                        <button @click="transitionToEdit"
+                            class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            BEARBEITEN
+                        </button>
                         <button @click="selectedEvent = null" class="text-gray-400 hover:text-gray-600">
-                            <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
-                    <div class="flex flex-wrap gap-4 text-sm text-gray-600 font-medium">
-                        <span class="flex items-center gap-1"><svg width="18" height="18" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>{{ formatDate(selectedEvent.startDate) }}</span>
-                        <span class="flex items-center gap-1"><svg width="18" height="18" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>{{ selectedEvent.location }}</span>
-                    </div>
                 </div>
 
-                <div class="px-6 overflow-y-auto flex-1">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-gray-800">Dienste</h3>
-                        <button @click="showShiftForm = true" v-if="!showShiftForm"
-                            class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded font-bold hover:bg-blue-700">
-                            DIENST HINZUFÜGEN
-                        </button>
-                    </div>
+                <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                    <!-- Left Side: Stammdaten (Read-Only) -->
+                    <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200 space-y-6">
+                        <div>                            
+                            <div class="space-y-4">
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400 uppercase">Titel</span>
+                                    <span class="text-lg font-bold text-gray-800">{{ selectedEvent.title }}</span>
+                                </div>
 
-                    <div v-if="showShiftForm" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-3">
-                        <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst)"
-                            class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none" />
-                        <textarea v-model="shiftForm.description" placeholder="Beschreibung"
-                            class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none"></textarea>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer</label>
-                            <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
-                                placeholder="Helfer Anzahl" class="border border-gray-200 p-2 rounded shadow-sm outline-none" />
-                            <label class="self-center text-sm text-gray-600">Schwierigkeitsgrad</label>
-                            <select v-model.number="shiftForm.difficulty" class="border border-gray-200 p-2 rounded shadow-sm outline-none bg-white">
-                                <option :value="0">Einfach (10 Pkt/h)</option>
-                                <option :value="1">Mittel (20 Pkt/h)</option>
-                                <option :value="2">Schwer (30 Pkt/h)</option>
-                            </select>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-xs text-gray-500">Schichtstart <span class="text-gray-400">(optional)</span></label>
-                                <input v-model="shiftForm.startTime" type="datetime-local"
-                                    class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-xs text-gray-500">Schichtende <span class="text-gray-400">(optional)</span></label>
-                                <input v-model="shiftForm.endTime" type="datetime-local"
-                                    class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-700 font-medium">
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                            {{ shiftPointsPreview }} Punkte ({{ shiftDifficultyLabel(shiftForm.difficulty) }} · {{ shiftDurationLabel }})
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategorien</label>
-                            <div class="flex flex-wrap gap-2">
-                                <button
-                                    v-for="cat in availableCategories"
-                                    :key="cat.id"
-                                    type="button"
-                                    @click="toggleShiftCategory(cat.id)"
-                                    :class="[
-                                        'px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
-                                        shiftForm.categoryIds.includes(cat.id)
-                                            ? 'bg-blue-600 text-white border-blue-600'
-                                            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-                                    ]"
-                                >{{ cat.name }}</button>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">{{
-                                shiftForm.id ? 'Aktualisieren' : 'Dienst speichern' }}</button>
-                            <button @click="resetShiftForm"
-                                class="flex-1 bg-gray-200 text-gray-600 py-2 rounded font-bold text-sm">Abbrechen</button>
-                        </div>
-                    </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400 uppercase">Beschreibung</span>
+                                    <p class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded-lg border border-gray-200 mt-1">
+                                        {{ selectedEvent.description || 'Keine Beschreibung vorhanden.' }}
+                                    </p>
+                                </div>
 
-                    <div class="space-y-3">
-                        <div v-for="shift in currentShifts" :key="shift.id"
-                            class="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-                            <div>
-                                <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
-                                <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
-                                <div v-if="shift.categories?.length" class="flex flex-wrap gap-1 mt-1">
-                                    <span v-for="cat in shift.categories" :key="cat.id"
-                                        class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-100">
-                                        {{ cat.name }}
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400 uppercase">Ort</span>
+                                    <span class="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mt-1">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        {{ selectedEvent.location }}
                                     </span>
                                 </div>
-                                <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
-                                    <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
 
-                                    <!-- Bookmarks (view-only) -->
-                                    <template v-if="getInterestedHelpers(shift).length > 0">
-                                        <div class="px-3 pb-1.5">
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                                                Vorgemerkt ({{ getInterestedHelpers(shift).length }})
-                                            </span>
-                                        </div>
-                                        <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
-                                            class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
-                                            <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
-                                            <span class="truncate">{{ helper.userName }}</span>
-                                        </div>
-                                    </template>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="block text-xs font-bold text-gray-400 uppercase">Start</span>
+                                        <span class="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mt-1">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {{ formatDate(selectedEvent.startDate) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs font-bold text-gray-400 uppercase">Ende</span>
+                                        <span class="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mt-1">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {{ formatDate(selectedEvent.endDate) }}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                    <!-- Applications (Accept/Deny) -->
-                                    <template v-if="getAppliedHelpers(shift).length > 0">
-                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
-                                            <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
-                                                Angemeldet ({{ getAppliedHelpers(shift).length }})
-                                            </span>
+                                <div>
+                                    <span class="block text-xs font-bold text-gray-400 uppercase">Event-Status</span>
+                                    <div class="mt-1">
+                                        <span :class="getStatusBadgeClass(selectedEvent.eventStatus)" class="px-2.5 py-1 rounded-full text-xs font-semibold border inline-block">
+                                            {{ getStatusLabel(selectedEvent.eventStatus) }}
+                                        </span>
+                                        <div v-if="needsAttention(selectedEvent)" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
+                                            <svg class="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span>{{ getAttentionHint(selectedEvent) }}</span>
                                         </div>
-                                        <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
-                                            class="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
-                                            <div class="flex items-center gap-2 text-sm text-gray-700 min-w-0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Dienste (Read-Only) -->
+                    <div class="w-full md:w-1/2 p-6 overflow-y-auto flex flex-col">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Dienste</h3>
+
+                        <!-- Shift List (Read-Only) -->
+                        <div class="space-y-3 flex-1 overflow-y-auto">
+                            <div v-for="shift in currentShifts" :key="shift.id"
+                                class="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div>
+                                    <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
+                                    <div v-if="shift.categories?.length" class="flex flex-wrap gap-1 mt-1">
+                                        <span v-for="cat in shift.categories" :key="cat.id"
+                                            class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-100">
+                                            {{ cat.name }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
+                                        <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
+
+                                        <!-- Bookmarks (view-only) -->
+                                        <template v-if="getInterestedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5">
+                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                                    Vorgemerkt ({{ getInterestedHelpers(shift).length }})
+                                                </span>
+                                            </div>
+                                            <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
+                                                class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
+                                                <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
+                                                <span class="truncate">{{ helper.userName }}</span>
+                                            </div>
+                                        </template>
+
+                                        <!-- Applications (Applied - Read-Only) -->
+                                        <template v-if="getAppliedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
+                                                <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
+                                                    Angemeldet ({{ getAppliedHelpers(shift).length }})
+                                                </span>
+                                            </div>
+                                            <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
+                                                class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700 min-w-0">
                                                 <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
                                                 <span class="truncate">{{ helper.userName }}</span>
                                             </div>
-                                            <div class="flex gap-1 shrink-0 ml-2">
-                                                <button @click="confirmHelper(helper)"
-                                                    :disabled="helper._updating"
-                                                    class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded font-semibold hover:bg-green-200 transition-colors disabled:opacity-50">
-                                                    Bestätigen
-                                                </button>
-                                                <button @click="rejectHelper(helper)"
-                                                    :disabled="helper._updating"
-                                                    class="text-xs px-2 py-1 bg-red-50 text-red-600 rounded font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
-                                                    Ablehnen
-                                                </button>
+                                        </template>
+
+                                        <!-- Confirmed -->
+                                        <template v-if="getConfirmedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 || getAppliedHelpers(shift).length > 0 }">
+                                                <span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">
+                                                    Bestätigt ({{ getConfirmedHelpers(shift).length }})
+                                                </span>
                                             </div>
-                                        </div>
-                                    </template>
+                                            <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
+                                                class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
+                                                <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                                                <span class="truncate">{{ helper.userName }}</span>
+                                            </div>
+                                        </template>
 
-                                    <template v-if="getConfirmedHelpers(shift).length > 0">
-                                        <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 || getAppliedHelpers(shift).length > 0 }">
-                                            <span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">
-                                                Bestätigt ({{ getConfirmedHelpers(shift).length }})
-                                            </span>
+                                        <div v-if="getInterestedHelpers(shift).length === 0 && getAppliedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
+                                            class="px-3 pb-3 text-xs text-gray-400 italic">
+                                            Noch keine Helfer:innen eingetragen
                                         </div>
-                                        <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
-                                            class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
-                                            <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
-                                            <span class="truncate">{{ helper.userName }}</span>
-                                        </div>
-                                    </template>
-
-                                    <div v-if="getInterestedHelpers(shift).length === 0 && getAppliedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
-                                        class="px-3 pb-3 text-xs text-gray-400 italic">
-                                        Noch keine Helfer:innen eingetragen
+                                        <div class="pb-1"></div>
                                     </div>
-                                    <div class="pb-1"></div>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
-                                <button @click="editShift(shift)"
-                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button @click="deleteShift(shift.id)"
-                                    class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
+                            <div v-if="currentShifts.length === 0" class="text-center py-8 text-gray-400 italic text-sm">
+                                Noch keine Dienste für dieses Event erstellt.
                             </div>
-                        </div>
-                        <div v-if="currentShifts.length === 0" class="text-center py-8 text-gray-400 italic text-sm">
-                            Noch keine Dienste für dieses Event erstellt.
                         </div>
                     </div>
                 </div>
@@ -526,10 +493,10 @@
         <!-- Edit Event Modal -->
         <div v-if="editingEvent"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+            <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col">
                 <div class="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h2 class="text-xl font-bold text-gray-900">Veranstaltung bearbeiten</h2>
-                    <button @click="editingEvent = null" class="text-gray-400 hover:text-gray-600">
+                    <button @click="closeEdit" class="text-gray-400 hover:text-gray-600">
                         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -537,70 +504,239 @@
                     </button>
                 </div>
 
-                <div class="p-6 overflow-y-auto flex-1">
-                    <form @submit.prevent="updateEvent" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col md:col-span-2">
-                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
-                            <input v-model="editForm.title" placeholder="Sommerfest"
-                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
-                        </div>
-                        <div class="flex flex-col md:col-span-2">
-                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Beschreibung</label>
-                            <textarea v-model="editForm.description" rows="3"
-                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                required></textarea>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
-                            <input v-model="editForm.location" placeholder="Marktplatz"
-                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
+                <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                    <!-- Left Side: Stammdaten Form -->
+                    <div class="w-full md:w-1/2 p-6 overflow-y-auto border-r border-gray-200">
+                        <form @submit.prevent="updateEvent" class="space-y-4">
                             <div class="flex flex-col">
-                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
-                                <input v-model="editForm.startDate" type="datetime-local" :min="editMinStartDate"
-                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                    required />
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Titel</label>
+                                <input v-model="editForm.title" placeholder="Sommerfest"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
                             </div>
                             <div class="flex flex-col">
-                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
-                                <input v-model="editForm.endDate" type="datetime-local"
-                                    :min="editMinEndDate"
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Beschreibung</label>
+                                <textarea v-model="editForm.description" rows="4"
                                     class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                    required />
+                                    required></textarea>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ort</label>
+                                <input v-model="editForm.location" placeholder="Marktplatz"
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col">
+                                    <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Start</label>
+                                    <input v-model="editForm.startDate" type="datetime-local" :min="editMinStartDate"
+                                        class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                        required />
+                                </div>
+                                <div class="flex flex-col">
+                                    <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Ende</label>
+                                    <input v-model="editForm.endDate" type="datetime-local"
+                                        :min="editMinEndDate"
+                                        class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                        required />
+                                </div>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
+                                <select 
+                                    v-model="editForm.eventStatus" 
+                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                                    :class="{ 'border-amber-300 focus:ring-amber-500': editingEventNeedsAttention }"
+                                >
+                                    <option :value="0">Geplant</option>
+                                    <option :value="1">Findet statt</option>
+                                    <option :value="2">Durchgeführt</option>
+                                    <option :value="3">Abgesagt</option>
+                                </select>
+                                <div v-if="editingEventNeedsAttention" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
+                                    <svg class="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span>{{ editingEventAttentionHint }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4 pt-4">
+                                <button type="submit" :disabled="isUpdatingEvent"
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
+                                    {{ isUpdatingEvent ? 'Wird gespeichert...' : 'Änderungen speichern' }}
+                                </button>
+                                <button type="button" @click="closeEdit"
+                                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-lg font-bold transition-colors">
+                                    Abbrechen
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Side: Dienste verwalten -->
+                    <div class="w-full md:w-1/2 p-6 overflow-y-auto flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-800">Dienste verwalten</h3>
+                            <button @click="startAddShift" v-if="!showShiftForm"
+                                class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded font-bold hover:bg-blue-700">
+                                DIENST HINZUFÜGEN
+                            </button>
+                        </div>
+
+                        <!-- Add/Edit Shift Form -->
+                        <div v-if="showShiftForm" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-3">
+                            <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst)"
+                                class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none" />
+                            <textarea v-model="shiftForm.description" placeholder="Beschreibung"
+                                class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none"></textarea>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer</label>
+                                <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
+                                    placeholder="Helfer Anzahl" class="border border-gray-200 p-2 rounded shadow-sm outline-none" />
+                                <label class="self-center text-sm text-gray-600">Schwierigkeitsgrad</label>
+                                <select v-model.number="shiftForm.difficulty" class="border border-gray-200 p-2 rounded shadow-sm outline-none bg-white">
+                                    <option :value="0">Einfach (10 Pkt/h)</option>
+                                    <option :value="1">Mittel (20 Pkt/h)</option>
+                                    <option :value="2">Schwer (30 Pkt/h)</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs text-gray-500">Schichtstart</label>
+                                    <input v-model="shiftForm.startTime" type="datetime-local"
+                                        class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs text-gray-500">Schichtende</label>
+                                    <input v-model="shiftForm.endTime" type="datetime-local"
+                                        class="border border-gray-200 p-2 rounded shadow-sm outline-none text-sm" />
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-700 font-medium">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                {{ shiftPointsPreview }} Punkte ({{ shiftDifficultyLabel(shiftForm.difficulty) }} · {{ shiftDurationLabel }})
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategorien</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <button
+                                        v-for="cat in availableCategories"
+                                        :key="cat.id"
+                                        type="button"
+                                        @click="toggleShiftCategory(cat.id)"
+                                        :class="[
+                                            'px-3 py-1 rounded-full text-xs font-semibold border transition-colors',
+                                            shiftForm.categoryIds.includes(cat.id)
+                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                                        ]"
+                                    >{{ cat.name }}</button>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="saveShift" class="flex-1 bg-green-600 text-white py-2 rounded font-bold">{{
+                                    shiftForm.id ? 'Aktualisieren' : 'Dienst speichern' }}</button>
+                                <button @click="resetShiftForm"
+                                    class="flex-1 bg-gray-200 text-gray-600 py-2 rounded font-bold text-sm">Abbrechen</button>
                             </div>
                         </div>
-                        <div class="flex flex-col md:col-span-2">
-                                                            <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
-                                                            <select 
-                                                                v-model="editForm.eventStatus" 
-                                                                class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
-                                                                :class="{ 'border-amber-300 focus:ring-amber-500': editingEventNeedsAttention }"
-                                                            >
-                                                                <option :value="0">Geplant</option>
-                                                                <option :value="1">Findet statt</option>
-                                                                <option :value="2">Durchgeführt</option>
-                                                                <option :value="3">Abgesagt</option>
-                                                            </select>
-                                                            <div v-if="editingEventNeedsAttention" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
-                                                                <svg class="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                                </svg>
-                                                                <span>{{ editingEventAttentionHint }}</span>
-                                                            </div>
-                                                        </div>
-                        
-                        <div class="md:col-span-2 flex gap-4 mt-2">
-                            <button type="submit" :disabled="isUpdatingEvent"
-                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400">
-                                {{ isUpdatingEvent ? 'Wird gespeichert...' : 'Änderungen speichern' }}
-                            </button>
-                            <button type="button" @click="editingEvent = null"
-                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-lg font-bold transition-colors">
-                                Abbrechen
-                            </button>
+
+                        <!-- Shifts List (Editable) -->
+                        <div class="space-y-3 flex-1 overflow-y-auto">
+                            <div v-for="shift in currentShifts" :key="shift.id"
+                                class="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div>
+                                    <h4 class="font-bold text-gray-900">{{ shift.name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ shift.points }} Punkte | {{ getConfirmedHelpers(shift).length }}/{{ shift.requiredHelpers }} Helfer</p>
+                                    <div v-if="shift.categories?.length" class="flex flex-wrap gap-1 mt-1">
+                                        <span v-for="cat in shift.categories" :key="cat.id"
+                                            class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-100">
+                                            {{ cat.name }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-4 bg-gray-50 rounded-lg overflow-hidden">
+                                        <h5 class="text-xs font-black uppercase text-gray-400 px-3 pt-3 pb-2">Helfer:innen</h5>
+
+                                        <!-- Bookmarks (view-only) -->
+                                        <template v-if="getInterestedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5">
+                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                                    Vorgemerkt ({{ getInterestedHelpers(shift).length }})
+                                                </span>
+                                            </div>
+                                            <div v-for="helper in getInterestedHelpers(shift)" :key="'int-' + helper.userId"
+                                                class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-500">
+                                                <div class="w-2 h-2 bg-slate-300 rounded-full shrink-0"></div>
+                                                <span class="truncate">{{ helper.userName }}</span>
+                                            </div>
+                                        </template>
+
+                                        <!-- Applications (Accept/Deny) -->
+                                        <template v-if="getAppliedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 }">
+                                                <span class="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
+                                                    Angemeldet ({{ getAppliedHelpers(shift).length }})
+                                                </span>
+                                            </div>
+                                            <div v-for="helper in getAppliedHelpers(shift)" :key="'app-' + helper.userId"
+                                                class="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
+                                                <div class="flex items-center gap-2 text-sm text-gray-700 min-w-0">
+                                                    <div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div>
+                                                    <span class="truncate">{{ helper.userName }}</span>
+                                                </div>
+                                                <div class="flex gap-1 shrink-0 ml-2">
+                                                    <button @click="confirmHelper(helper)"
+                                                        :disabled="helper._updating"
+                                                        class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded font-semibold hover:bg-green-200 transition-colors disabled:opacity-50">
+                                                        Bestätigen
+                                                    </button>
+                                                    <button @click="rejectHelper(helper)"
+                                                        :disabled="helper._updating"
+                                                        class="text-xs px-2 py-1 bg-red-50 text-red-600 rounded font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
+                                                        Ablehnen
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Confirmed -->
+                                        <template v-if="getConfirmedHelpers(shift).length > 0">
+                                            <div class="px-3 pb-1.5" :class="{ 'pt-3': getInterestedHelpers(shift).length > 0 || getAppliedHelpers(shift).length > 0 }">
+                                                <span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">
+                                                    Bestätigt ({{ getConfirmedHelpers(shift).length }})
+                                                </span>
+                                            </div>
+                                            <div v-for="helper in getConfirmedHelpers(shift)" :key="'conf-' + helper.userId"
+                                                class="flex items-center px-3 py-1.5 border-t border-gray-100 gap-2 text-sm text-gray-700">
+                                                <div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                                                <span class="truncate">{{ helper.userName }}</span>
+                                            </div>
+                                        </template>
+
+                                        <div v-if="getInterestedHelpers(shift).length === 0 && getAppliedHelpers(shift).length === 0 && getConfirmedHelpers(shift).length === 0"
+                                            class="px-3 pb-3 text-xs text-gray-400 italic">
+                                            Noch keine Helfer:innen eingetragen
+                                        </div>
+                                        <div class="pb-1"></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 font-bold uppercase text-xs mt-2 justify-end">
+                                    <button @click="editShift(shift)"
+                                        class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                        Bearbeiten
+                                    </button>
+                                    <button @click="deleteShift(shift.id)"
+                                        class="text-red-500 hover:text-red-700 flex items-center gap-1">
+                                        Löschen
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="currentShifts.length === 0" class="text-center py-8 text-gray-400 italic text-sm">
+                                Noch keine Dienste für dieses Event erstellt.
+                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -806,6 +942,7 @@ const shiftForm = ref({ id: null, name: '', description: '', requiredHelpers: 1,
 const editingEvent = ref(null);
 const editForm = ref({ title: '', location: '', startDate: '', endDate: '', description: '', eventStatus: 0 });
 const isUpdatingEvent = ref(false);
+const shiftsToDelete = ref([]);
 
 const toggleShiftCategory = (id) => {
     const idx = shiftForm.value.categoryIds.indexOf(id);
@@ -817,8 +954,9 @@ const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[
 const shiftRatePerHour = (d) => ({ 0: 10, 1: 20, 2: 30 }[d] ?? 10);
 
 const shiftDurationLabel = computed(() => {
-    const startRaw = shiftForm.value.startTime || selectedEvent.value?.startDate;
-    const endRaw = shiftForm.value.endTime || selectedEvent.value?.endDate;
+    const activeEv = editingEvent.value || selectedEvent.value;
+    const startRaw = shiftForm.value.startTime || activeEv?.startDate;
+    const endRaw = shiftForm.value.endTime || activeEv?.endDate;
     if (!startRaw || !endRaw) return '–';
     const start = new Date(startRaw);
     const end = new Date(endRaw);
@@ -829,8 +967,9 @@ const shiftDurationLabel = computed(() => {
 
 const shiftPointsPreview = computed(() => {
     const rate = shiftRatePerHour(shiftForm.value.difficulty);
-    const startRaw = shiftForm.value.startTime || selectedEvent.value?.startDate;
-    const endRaw = shiftForm.value.endTime || selectedEvent.value?.endDate;
+    const activeEv = editingEvent.value || selectedEvent.value;
+    const startRaw = shiftForm.value.startTime || activeEv?.startDate;
+    const endRaw = shiftForm.value.endTime || activeEv?.endDate;
     if (!startRaw || !endRaw) return '–';
     const start = new Date(startRaw);
     const end = new Date(endRaw);
@@ -942,7 +1081,11 @@ const loadEvents = async () => {
         }
 
         if (selectedEvent.value) {
-            selectedEvent.value = events.value.find(e => e.id === selectedEvent.value.id);
+            const updated = events.value.find(e => e.id === selectedEvent.value.id);
+            if (updated) {
+                selectedEvent.value = updated;
+                currentShifts.value = (updated.shifts || []).filter(s => !shiftsToDelete.value.includes(s.id));
+            }
         }
         evaluateShowPastEventsDefault();
     } catch (error) {
@@ -994,7 +1137,7 @@ const formatForDateTimeInput = (dateString) => {
     return localDate.toISOString().slice(0, 16);
 };
 
-const openEdit = (event) => {
+const openEdit = async (event) => {
     editingEvent.value = { ...event };
     editForm.value = {
         title: event.title || '',
@@ -1004,6 +1147,53 @@ const openEdit = (event) => {
         endDate: formatForDateTimeInput(event.endDate),
         eventStatus: normalizeStatus(event.eventStatus)
     };
+
+    currentShifts.value = [];
+    resetShiftForm();
+
+    try {
+        const data = await $fetch(`${config.public.apiBase}/events/${event.id}`, {
+            params: { includeShifts: true },
+            headers: { Authorization: getAuthHeader() }
+        });
+
+        const shiftsWithHelpers = data.shifts || data.Shifts || [];
+
+        for (const shift of shiftsWithHelpers) {
+            try {
+                const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+                    headers: { Authorization: getAuthHeader() }
+                });
+                shift.helperList = helpers;
+            } catch (helperErr) {
+                console.error(`Fehler beim Laden der Helfer für Dienst ${shift.id}:`, helperErr);
+                shift.helperList = [];
+            }
+        }
+        currentShifts.value = shiftsWithHelpers;
+    } catch (error) {
+        console.error("Fehler beim Laden der Event-Dienste für Bearbeitung:", error);
+    }
+};
+
+const closeEdit = () => {
+    const evId = editingEvent.value?.id;
+    editingEvent.value = null;
+    shiftsToDelete.value = [];
+    resetShiftForm();
+    if (evId) {
+        const ev = events.value.find(e => e.id === evId);
+        if (ev) {
+            openDetails(ev);
+        }
+    }
+};
+
+const transitionToEdit = () => {
+    if (!selectedEvent.value) return;
+    const ev = { ...selectedEvent.value };
+    selectedEvent.value = null;
+    openEdit(ev);
 };
 
 const updateEvent = async () => {
@@ -1026,7 +1216,19 @@ const updateEvent = async () => {
             body: JSON.stringify(payload)
         });
         
-        editingEvent.value = null;
+        // Delete the deferred shifts after event update succeeds
+        if (shiftsToDelete.value.length > 0) {
+            for (const shiftId of shiftsToDelete.value) {
+                try {
+                    await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' });
+                } catch (delErr) {
+                    console.error(`Fehler beim Löschen des Dienstes ${shiftId}:`, delErr);
+                }
+            }
+            shiftsToDelete.value = [];
+        }
+        
+        closeEdit();
         await loadEvents();
     } catch (error) {
         alert("Fehler beim Aktualisieren des Events.");
@@ -1078,7 +1280,24 @@ const openDetails = async (event) => {
 
 const resetShiftForm = () => {
     showShiftForm.value = false;
-    shiftForm.value = { id: null, name: '', description: '', requiredHelpers: 1, requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', categoryIds: [] };
+    const activeEv = editingEvent.value || selectedEvent.value;
+    shiftForm.value = { 
+        id: null, 
+        name: '', 
+        description: '', 
+        requiredHelpers: 1, 
+        requirements: '', 
+        ageRestriction: 0, 
+        difficulty: 0, 
+        startTime: toLocalDatetime(activeEv?.startDate), 
+        endTime: toLocalDatetime(activeEv?.endDate), 
+        categoryIds: [] 
+    };
+};
+
+const startAddShift = () => {
+    resetShiftForm();
+    showShiftForm.value = true;
 };
 
 const toLocalDatetime = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : '';
@@ -1096,10 +1315,12 @@ const editShift = (shift) => {
 
 const saveShift = async () => {
     if (!shiftForm.value.name) return alert("Name fehlt");
+    const activeEv = editingEvent.value || selectedEvent.value;
+    if (!activeEv) return;
     try {
         const isEdit = !!shiftForm.value.id;
         const url = isEdit ? `${config.public.apiBase}/shifts/${shiftForm.value.id}` : `${config.public.apiBase}/shifts`;
-        const payload = { ...shiftForm.value, eventId: selectedEvent.value.id };
+        const payload = { ...shiftForm.value, eventId: activeEv.id };
 
         await authenticatedFetch(url, {
             method: isEdit ? 'PUT' : 'POST',
@@ -1108,13 +1329,34 @@ const saveShift = async () => {
 
         resetShiftForm();
 
-        const updatedEvent = await $fetch(`${config.public.apiBase}/events/${selectedEvent.value.id}`, {
+        const updatedEvent = await $fetch(`${config.public.apiBase}/events/${activeEv.id}`, {
             params: { includeShifts: true },
             headers: { Authorization: getAuthHeader() }
         });
 
-        selectedEvent.value = { ...updatedEvent };
-        currentShifts.value = [...(updatedEvent.shifts || updatedEvent.Shifts || [])];
+        if (selectedEvent.value && selectedEvent.value.id === activeEv.id) {
+            selectedEvent.value = { ...updatedEvent };
+        }
+        
+        // Preserve helper lists for unchanged shifts to fix Bug 2 when saving/editing a shift
+        const newShifts = (updatedEvent.shifts || updatedEvent.Shifts || []).filter(s => !shiftsToDelete.value.includes(s.id));
+        for (const ns of newShifts) {
+            const existing = currentShifts.value.find(s => s.id === ns.id);
+            if (existing && existing.helperList) {
+                ns.helperList = existing.helperList;
+            } else {
+                try {
+                    const helpers = await $fetch(`${config.public.apiBase}/participation/shift/${ns.id}`, {
+                        headers: { Authorization: getAuthHeader() }
+                    });
+                    ns.helperList = helpers;
+                } catch (helperErr) {
+                    console.error(`Fehler beim Laden der Helfer für Dienst ${ns.id}:`, helperErr);
+                    ns.helperList = [];
+                }
+            }
+        }
+        currentShifts.value = newShifts;
 
         loadEvents();
     } catch (error) {
@@ -1122,13 +1364,15 @@ const saveShift = async () => {
     }
 };
 
-const deleteShift = async (shiftId) => {
+const deleteShift = (shiftId) => {
     if (!confirm("Dienst löschen?")) return;
-    try {
-        await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' });
-        await loadEvents();
-    } catch (error) {
-        alert("Fehler beim Löschen des Dienstes.");
+    
+    // Remove from currentShifts in memory to defer delete
+    currentShifts.value = currentShifts.value.filter(s => s.id !== shiftId);
+    
+    // Track for deletion on save
+    if (shiftId) {
+        shiftsToDelete.value.push(shiftId);
     }
 };
 
@@ -1147,14 +1391,15 @@ const updateHelperStatus = async (helper, status) => {
             const previousStatus = helper.status
             helper.status = status
             // Keep the table-level confirmed count in sync
-            if (selectedEvent.value) {
+            const activeEv = editingEvent.value || selectedEvent.value;
+            if (activeEv) {
                 if (status === 1 && previousStatus !== 1) {
-                    selectedEvent.value.promisedHelpers = (selectedEvent.value.promisedHelpers || 0) + 1
+                    activeEv.promisedHelpers = (activeEv.promisedHelpers || 0) + 1
                 } else if (status !== 1 && previousStatus === 1) {
-                    selectedEvent.value.promisedHelpers = Math.max(0, (selectedEvent.value.promisedHelpers || 0) - 1)
+                    activeEv.promisedHelpers = Math.max(0, (activeEv.promisedHelpers || 0) - 1)
                 }
-                const row = events.value.find(e => e.id === selectedEvent.value.id)
-                if (row) row.promisedHelpers = selectedEvent.value.promisedHelpers
+                const row = events.value.find(e => e.id === activeEv.id)
+                if (row) row.promisedHelpers = activeEv.promisedHelpers
             }
         } else {
             alert('Fehler beim Aktualisieren des Status.')
