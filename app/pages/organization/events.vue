@@ -178,7 +178,7 @@
                                         <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
-                                            <button @click="deleteEvent(event.id)"
+                                            <button v-if="event.eventStatus === 0" @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
                                     </td>
@@ -282,7 +282,7 @@
                                         <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
-                                            <button @click="deleteEvent(event.id)"
+                                            <button v-if="event.eventStatus === 0" @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
                                     </td>
@@ -1548,6 +1548,11 @@ const saveEvent = async () => {
 };
 
 const deleteEvent = async (id) => {
+    const event = events.value.find(e => e.id === id);
+    if (event && event.eventStatus !== 0) {
+        alert("Nur geplante Veranstaltungen können gelöscht werden.");
+        return;
+    }
     if (!confirm("Veranstaltung wirklich löschen?")) return;
     try {
         await authenticatedFetch(`${config.public.apiBase}/events/${id}`, { method: 'DELETE' });
