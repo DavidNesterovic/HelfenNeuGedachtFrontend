@@ -153,14 +153,14 @@
 
                     <form @submit.prevent="saveShift(isEditModalOpen)" class="p-6 space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Bezeichnung</label>
+                            <label class="block text-sm font-medium text-gray-700">Bezeichnung <span class="text-red-500">*</span></label>
                             <input v-model="shiftForm.name" type="text"
                                 class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
                                 required>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
+                            <label class="block text-sm font-medium text-gray-700">Beschreibung <span class="text-red-500">*</span></label>
                             <textarea v-model="shiftForm.description" rows="3"
                                 class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
                                 required></textarea>
@@ -180,6 +180,11 @@
                                 <label class="block text-sm font-medium text-gray-700">Alter</label>
                                 <input v-model.number="shiftForm.ageRestriction" type="number"
                                     class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Anzahl Helfer <span class="text-red-500">*</span></label>
+                                <input v-model.number="shiftForm.requiredHelpers" type="number"
+                                    class="mt-1 block w-full rounded-lg border-gray-300 border p-2" min="0" required>
                             </div>
                         </div>
 
@@ -204,7 +209,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Veranstaltung</label>
+                            <label class="block text-sm font-medium text-gray-700">Veranstaltung <span class="text-red-500">*</span></label>
                             <select v-model="shiftForm.eventId"
                                 class="mt-1 block w-full rounded-lg border-gray-300 border p-2" required>
                                 <option value="" disabled>Bitte wählen...</option>
@@ -341,6 +346,7 @@ const shiftForm = ref({
     description: '',
     requirements: '',
     ageRestriction: 0,
+    requiredHelpers: 1,
     difficulty: 0,
     startTime: '',
     endTime: '',
@@ -423,7 +429,7 @@ const toLocalDatetime = (iso) => {
 };
 
 const openCreateModal = () => {
-    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', eventId: '', categoryIds: [] };
+    shiftForm.value = { id: null, name: '', description: '', requirements: '', ageRestriction: 0, requiredHelpers: 1, difficulty: 0, startTime: '', endTime: '', eventId: '', categoryIds: [] };
     isCreateModalOpen.value = true;
 };
 
@@ -431,6 +437,7 @@ const openEditModal = (shift) => {
     shiftForm.value = {
         ...shift,
         difficulty: shift.difficulty ?? 0,
+        requiredHelpers: shift.requiredHelpers ?? 1,
         startTime: toLocalDatetime(shift.startTime),
         endTime: toLocalDatetime(shift.endTime),
         categoryIds: (shift.categories ?? []).map(c => c.id),
@@ -439,6 +446,15 @@ const openEditModal = (shift) => {
 };
 
 const saveShift = async (isEdit = false) => {
+    if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
+        alert("Das Mindestalter darf nicht kleiner als 0 sein.");
+        return;
+    }
+    if (typeof shiftForm.value.requiredHelpers === 'number' && shiftForm.value.requiredHelpers < 0) {
+        alert("Die Anzahl der Helfer darf nicht kleiner als 0 sein.");
+        return;
+    }
+
     isSubmitting.value = true;
     const url = isEdit
         ? `${config.public.apiBase}/shifts/${shiftForm.value.id}`

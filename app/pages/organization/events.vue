@@ -590,13 +590,13 @@
 
                         <!-- Add/Edit Shift Form -->
                         <div v-if="showShiftForm" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-3">
-                            <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst)"
+                            <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst) *"
                                 class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none" />
                             <textarea v-model="shiftForm.description" placeholder="Beschreibung"
                                 class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none"></textarea>
                             <div class="grid grid-cols-2 gap-2">
-                                <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer</label>
-                                <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
+                                <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer <span class="text-red-500">*</span></label>
+                                <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers" min="0"
                                     placeholder="Helfer Anzahl" class="border border-gray-200 p-2 rounded shadow-sm outline-none" />
                                 <label class="self-center text-sm text-gray-600">Schwierigkeitsgrad</label>
                                 <select v-model.number="shiftForm.difficulty" class="border border-gray-200 p-2 rounded shadow-sm outline-none bg-white">
@@ -855,13 +855,13 @@
 
                         <!-- Add/Edit Shift Form -->
                         <div v-if="showShiftForm" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-3">
-                            <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst)"
+                            <input v-model="shiftForm.name" placeholder="Name (z.B. Bar-Dienst) *"
                                 class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none" />
                             <textarea v-model="shiftForm.description" placeholder="Beschreibung"
                                 class="w-full border border-gray-200 p-2 rounded shadow-sm outline-none"></textarea>
                             <div class="grid grid-cols-2 gap-2">
-                                <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer</label>
-                                <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers"
+                                <label for="helpers" class="self-center text-sm text-gray-600">Anzahl Helfer <span class="text-red-500">*</span></label>
+                                <input v-model.number="shiftForm.requiredHelpers" type="number" name="helpers" min="0"
                                     placeholder="Helfer Anzahl" class="border border-gray-200 p-2 rounded shadow-sm outline-none" />
                                 <label class="self-center text-sm text-gray-600">Schwierigkeitsgrad</label>
                                 <select v-model.number="shiftForm.difficulty" class="border border-gray-200 p-2 rounded shadow-sm outline-none bg-white font-semibold">
@@ -1760,6 +1760,13 @@ const editShift = (shift) => {
 
 const saveShift = async () => {
     if (!shiftForm.value.name) return alert("Name fehlt");
+    
+    if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
+        return alert("Das Mindestalter darf nicht kleiner als 0 sein.");
+    }
+    if (typeof shiftForm.value.requiredHelpers === 'number' && shiftForm.value.requiredHelpers < 0) {
+        return alert("Die Anzahl der Helfer darf nicht kleiner als 0 sein.");
+    }
     
     if (showCreateModal.value) {
         const isEdit = shiftForm.value.id !== null;
