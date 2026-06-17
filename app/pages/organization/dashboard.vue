@@ -174,6 +174,47 @@
         </div>
       </Transition>
 
+      <!-- Events zum Abschließen -->
+      <div v-if="eventsToComplete.length > 0" class="bg-white p-6 rounded-xl shadow-sm border border-purple-200 mb-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="p-2 bg-purple-100 rounded-lg">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800">Veranstaltungen abschließen</h3>
+          <span class="text-sm font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+            {{ eventsToComplete.length }} offen
+          </span>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Diese vergangenen Veranstaltungen sollten abgeschlossen oder abgesagt werden.</p>
+        <div class="space-y-3">
+          <div v-for="event in eventsToComplete" :key="event.id"
+            class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-purple-200 bg-gray-50 hover:bg-purple-50/30 transition-all">
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-gray-900 truncate">{{ event.title }}</div>
+              <div class="text-sm text-gray-500">
+                {{ event.startDate ? new Date(event.startDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Kein Datum' }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 ml-4">
+              <button
+                @click="openCompleteModal(event)"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold rounded-lg transition-all bg-purple-100 text-purple-700 hover:bg-purple-200 hover:shadow-sm"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Abschließen
+              </button>
+              <NuxtLink :to="`/organization/events?id=${event.id}`" class="text-blue-600 text-sm font-bold hover:underline">
+                Details
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <h3 class="text-xl font-bold mb-4 text-gray-800">Meine Nächsten Veranstaltungen</h3>
         
@@ -288,7 +329,7 @@
               </div>
 
               <!-- User Stats / Info Grid -->
-              <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="grid grid-cols-3 gap-3 text-center">
                 <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
                   <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Punkte</span>
                   <span class="text-lg font-black text-amber-500 mt-1 block flex items-center justify-center gap-1">
@@ -301,6 +342,14 @@
                 <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
                   <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Einsätze</span>
                   <span class="text-lg font-black text-gray-800 mt-1 block">{{ selectedUserDetail.totalParticipations }}</span>
+                </div>
+                <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
+                  <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Bewertung</span>
+                  <span class="text-lg font-black text-amber-500 mt-1 block flex items-center justify-center gap-0.5">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    {{ selectedUserDetail.averageRating ? selectedUserDetail.averageRating.toFixed(1) : '–' }}
+                  </span>
+                  <span v-if="selectedUserDetail.ratingCount" class="text-[9px] text-gray-400">({{ selectedUserDetail.ratingCount }}×)</span>
                 </div>
               </div>
               
@@ -328,6 +377,30 @@ const shiftsCount = ref(0);
 const upcomingEvents = ref([]);
 const pendingParticipations = ref([]);
 const isLoading = ref(true);
+const allEvents = ref([]);
+
+const normalizeStatus = (statusVal) => {
+  if (statusVal === undefined || statusVal === null) return 0;
+  if (typeof statusVal === 'number') return statusVal;
+  const parsed = parseInt(statusVal);
+  if (!isNaN(parsed)) return parsed;
+  const statusMap = { 'Planned': 0, 'TakePlace': 1, 'Accomplished': 2, 'Canceled': 3 };
+  return statusMap[statusVal] !== undefined ? statusMap[statusVal] : 0;
+};
+
+const eventsToComplete = computed(() => {
+  const now = new Date();
+  return allEvents.value.filter(e => {
+    const end = e.endDate ? new Date(e.endDate) : (e.startDate ? new Date(e.startDate) : null);
+    if (!end || end >= now) return false;
+    const status = normalizeStatus(e.eventStatus !== undefined ? e.eventStatus : e.status);
+    return status === 0 || status === 1;
+  });
+});
+
+const openCompleteModal = (event) => {
+  navigateTo(`/organization/events`);
+};
 
 const showUserPopup = ref(false);
 const loadingUserDetail = ref(false);
@@ -547,6 +620,9 @@ const loadDashboardData = async () => {
       _updating: false,
       _action: null
     }));
+
+    // Store all events for eventsToComplete
+    allEvents.value = eventsRes;
 
     upcomingEvents.value = eventsRes
       .filter(e => e.startDate)

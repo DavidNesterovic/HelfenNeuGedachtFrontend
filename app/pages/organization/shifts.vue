@@ -446,13 +446,37 @@ const openEditModal = (shift) => {
 };
 
 const saveShift = async (isEdit = false) => {
-    if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
-        alert("Das Mindestalter darf nicht kleiner als 0 sein.");
+    if (!shiftForm.value.name) {
+        alert("Bitte geben Sie einen Namen für den Dienst ein.");
         return;
     }
-    if (typeof shiftForm.value.requiredHelpers === 'number' && shiftForm.value.requiredHelpers < 0) {
-        alert("Die Anzahl der Helfer darf nicht kleiner als 0 sein.");
+    if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
+        shiftForm.value.ageRestriction = 0;
+    }
+    if (typeof shiftForm.value.requiredHelpers !== 'number' || shiftForm.value.requiredHelpers < 1) {
+        alert("Die Anzahl der Helfer muss mindestens 1 betragen.");
         return;
+    }
+    // Validate shift times
+    if (shiftForm.value.startTime && shiftForm.value.endTime) {
+        if (new Date(shiftForm.value.endTime) <= new Date(shiftForm.value.startTime)) {
+            alert("Das Schichtende muss nach dem Schichtstart liegen.");
+            return;
+        }
+    }
+    // Validate within event timeframe
+    if (shiftForm.value.eventId) {
+        const ev = events.value.find(e => e.id === shiftForm.value.eventId);
+        if (ev) {
+            if (shiftForm.value.startTime && ev.startDate && new Date(shiftForm.value.startTime) < new Date(ev.startDate)) {
+                alert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
+                return;
+            }
+            if (shiftForm.value.endTime && ev.endDate && new Date(shiftForm.value.endTime) > new Date(ev.endDate)) {
+                alert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
+                return;
+            }
+        }
     }
 
     isSubmitting.value = true;

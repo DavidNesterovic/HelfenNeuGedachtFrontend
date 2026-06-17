@@ -52,8 +52,8 @@
                         class="block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition font-semibold"
                     >
                         <option value="">Alle</option>
-                        <option value="0">Geplant</option>
-                        <option value="1">Findet statt</option>
+                        <option value="0">Entwurf</option>
+                        <option value="1">Veröffentlicht</option>
                         <option value="2">Durchgeführt</option>
                         <option value="3">Abgesagt</option>
                     </select>
@@ -175,10 +175,14 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <div class="flex justify-center gap-4 font-bold uppercase text-xs">
+                                        <div class="flex justify-center gap-3 font-bold uppercase text-xs flex-wrap">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
-                                            <button v-if="event.eventStatus === 0" @click="deleteEvent(event.id)"
+                                            <button v-if="normalizeStatus(event.eventStatus) === 0" @click="publishEvent(event)"
+                                                class="text-emerald-600 hover:text-emerald-800">Veröffentlichen</button>
+                                            <button v-if="normalizeStatus(event.eventStatus) === 0 || normalizeStatus(event.eventStatus) === 1" @click="cancelEvent(event)"
+                                                class="text-orange-500 hover:text-orange-700">Absagen</button>
+                                            <button v-if="normalizeStatus(event.eventStatus) === 0" @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
                                     </td>
@@ -282,6 +286,10 @@
                                         <div class="flex justify-center gap-4 font-bold uppercase text-xs">
                                             <button @click="openDetails(event)"
                                                 class="text-blue-600 hover:text-blue-800">Details</button>
+                                            <button v-if="normalizeStatus(event.eventStatus) === 1" @click="openCompleteModal(event)"
+                                                class="text-purple-600 hover:text-purple-800">Abschließen</button>
+                                            <button v-if="normalizeStatus(event.eventStatus) === 2" @click="openRatingModal(event)"
+                                                class="text-amber-600 hover:text-amber-800">Bewerten</button>
                                             <button v-if="event.eventStatus === 0" @click="deleteEvent(event.id)"
                                                 class="text-red-500 hover:text-red-700">Löschen</button>
                                         </div>
@@ -303,8 +311,30 @@
             <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] overflow-hidden shadow-2xl flex flex-col">
                 <div class="p-6 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h2 class="text-xl font-bold text-gray-900">Veranstaltungsdetails</h2>
-                    <div class="flex items-center gap-3">
-                        <button @click="transitionToEdit"
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Workflow Actions based on status -->
+                        <button v-if="normalizeStatus(selectedEvent.eventStatus) === 0" @click="publishEvent(selectedEvent)"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            VERÖFFENTLICHEN
+                        </button>
+                        <button v-if="normalizeStatus(selectedEvent.eventStatus) === 1" @click="() => { const ev = {...selectedEvent}; selectedEvent = null; openCompleteModal(ev); }"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            ABSCHLIESSEN
+                        </button>
+                        <button v-if="normalizeStatus(selectedEvent.eventStatus) === 2" @click="() => { const ev = selectedEvent; selectedEvent = null; openRatingModal(ev); }"
+                            class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                            BEWERTEN
+                        </button>
+                        <button v-if="normalizeStatus(selectedEvent.eventStatus) === 0 || normalizeStatus(selectedEvent.eventStatus) === 1"
+                            @click="cancelEvent(selectedEvent)"
+                            class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-red-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            ABSAGEN
+                        </button>
+                        <button v-if="normalizeStatus(selectedEvent.eventStatus) !== 2 && normalizeStatus(selectedEvent.eventStatus) !== 3" @click="transitionToEdit"
                             class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -547,22 +577,26 @@
                             </div>
                             <div class="flex flex-col">
                                 <label class="text-xs font-bold text-gray-500 mb-1 uppercase">Event-Status</label>
-                                <select 
-                                    v-model="editForm.eventStatus" 
-                                    class="border border-gray-200 p-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
-                                    :class="{ 'border-amber-300 focus:ring-amber-500': editingEventNeedsAttention }"
-                                >
-                                    <option :value="0">Geplant</option>
-                                    <option :value="1">Findet statt</option>
-                                    <option :value="2">Durchgeführt</option>
-                                    <option :value="3">Abgesagt</option>
-                                </select>
-                                <div v-if="editingEventNeedsAttention" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
-                                    <svg class="w-4 h-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span>{{ editingEventAttentionHint }}</span>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span :class="getStatusBadgeClass(editForm.eventStatus)" class="px-3 py-1.5 rounded-full text-sm font-bold border">
+                                        {{ getStatusLabel(editForm.eventStatus) }}
+                                    </span>
                                 </div>
+                                <div class="flex flex-wrap gap-2 mt-3">
+                                    <button v-if="Number(editForm.eventStatus) === 0" type="button" @click="publishEventFromEdit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Veröffentlichen
+                                    </button>
+                                    <button v-if="Number(editForm.eventStatus) === 0 || Number(editForm.eventStatus) === 1" type="button" @click="cancelEventFromEdit"
+                                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        Absagen
+                                    </button>
+                                </div>
+                                <p class="text-[11px] text-gray-400 mt-2 italic">
+                                    Status-Änderungen sind nur vorwärts möglich. "Durchgeführt" kann nur über den Abschluss-Dialog gesetzt werden.
+                                </p>
                             </div>
                             
                             <div class="flex gap-4 pt-4">
@@ -959,6 +993,122 @@
             </div>
         </div>
 
+        <!-- Event Completion Modal -->
+        <div v-if="showCompleteModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-gray-200 bg-purple-50 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Veranstaltung abschließen</h2>
+                        <p class="text-sm text-gray-500 mt-1">{{ completeEvent?.title }}</p>
+                    </div>
+                    <button @click="showCompleteModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+                        <strong>Anwesenheit bestätigen:</strong> Markieren Sie alle Helfer:innen, die tatsächlich beim Event anwesend waren. Anwesende erhalten ihre Punkte gutgeschrieben.
+                    </div>
+                    <div v-for="shift in completeShifts" :key="shift.id" class="space-y-2">
+                        <h4 class="font-bold text-gray-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            {{ shift.name }} <span class="text-gray-400 font-normal">({{ shift.points }} Pkt.)</span>
+                        </h4>
+                        <div v-if="getConfirmedHelpers(shift).length === 0" class="text-xs text-gray-400 italic pl-4">Keine bestätigten Helfer</div>
+                        <label v-for="helper in getConfirmedHelpers(shift)" :key="helper.userId"
+                            class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <input type="checkbox" :value="helper.userId" v-model="attendedUserIds"
+                                class="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500" />
+                            <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 text-xs font-bold">
+                                {{ (helper.userName || '?').substring(0, 2).toUpperCase() }}
+                            </div>
+                            <span class="text-sm font-medium text-gray-800">{{ helper.userName }}</span>
+                        </label>
+                    </div>
+                    <div v-if="completeShifts.length === 0" class="text-center py-8 text-gray-400 italic text-sm">
+                        Keine Dienste mit bestätigten Helfern gefunden.
+                    </div>
+                </div>
+                <div class="p-6 border-t border-gray-200 bg-gray-50 flex gap-4">
+                    <button @click="executeComplete" :disabled="isCompleting"
+                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2">
+                        <svg v-if="isCompleting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        {{ isCompleting ? 'Wird abgeschlossen...' : `Event abschließen (${attendedUserIds.length} anwesend)` }}
+                    </button>
+                    <button @click="showCompleteModal = false"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-bold transition-colors">
+                        Abbrechen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Modal -->
+        <div v-if="showRatingModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-gray-200 bg-amber-50 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Helfer bewerten</h2>
+                        <p class="text-sm text-gray-500 mt-1">{{ ratingEvent?.title }}</p>
+                    </div>
+                    <button @click="showRatingModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <div v-if="ratingHelpers.length === 0" class="text-center py-8 text-gray-400 italic text-sm">
+                        Keine bewertbaren Helfer gefunden.
+                    </div>
+                    <div v-for="rh in ratingHelpers" :key="`${rh.userId}-${rh.shiftId}`"
+                        class="p-4 rounded-xl border border-gray-200 space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xs font-bold">
+                                {{ (rh.userName || '?').substring(0, 2).toUpperCase() }}
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900 text-sm">{{ rh.userName }}</div>
+                                <div class="text-xs text-gray-500">{{ rh.shiftName }}</div>
+                            </div>
+                            <div v-if="rh.existingRating" class="ml-auto text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                                Bereits bewertet
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 pl-12">
+                            <button v-for="star in 5" :key="star" type="button" @click="rh.rating = star"
+                                class="transition-transform hover:scale-110" :disabled="!!rh.existingRating">
+                                <svg class="w-7 h-7" :class="star <= (rh.rating || 0) ? 'text-amber-400' : 'text-gray-200'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </button>
+                            <span class="ml-2 text-xs text-gray-400">{{ rh.rating ? `${rh.rating}/5` : '' }}</span>
+                        </div>
+                        <input v-if="!rh.existingRating" v-model="rh.comment" type="text" placeholder="Kommentar (optional)"
+                            class="ml-12 mt-1 w-[calc(100%-3rem)] border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+                        <p v-else-if="rh.existingComment" class="ml-12 mt-1 text-xs text-gray-500 italic">„{{ rh.existingComment }}"</p>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-gray-200 bg-gray-50 flex gap-4">
+                    <button @click="submitRatings" :disabled="isSavingRatings || ratingHelpers.filter(r => r.rating && !r.existingRating).length === 0"
+                        class="flex-1 bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-lg font-bold transition-colors disabled:bg-gray-300 flex items-center justify-center gap-2">
+                        {{ isSavingRatings ? 'Wird gespeichert...' : 'Bewertungen speichern' }}
+                    </button>
+                    <button @click="showRatingModal = false"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-bold transition-colors">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- User Details Popup -->
         <transition name="fade">
             <div v-if="showUserPopup"
@@ -1010,7 +1160,7 @@
                             </div>
 
                             <!-- User Stats / Info Grid -->
-                            <div class="grid grid-cols-2 gap-3 text-center">
+                            <div class="grid grid-cols-3 gap-3 text-center">
                                 <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
                                     <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Punkte</span>
                                     <span class="text-lg font-black text-amber-500 mt-1 block flex items-center justify-center gap-1">
@@ -1023,6 +1173,14 @@
                                 <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
                                     <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Einsätze</span>
                                     <span class="text-lg font-black text-gray-800 mt-1 block">{{ selectedUserDetail.totalParticipations }}</span>
+                                </div>
+                                <div class="bg-gray-50 border border-gray-100 p-3 rounded-xl">
+                                    <span class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wide">Bewertung</span>
+                                    <span class="text-lg font-black text-amber-500 mt-1 block flex items-center justify-center gap-0.5">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        {{ selectedUserDetail.averageRating ? selectedUserDetail.averageRating.toFixed(1) : '–' }}
+                                    </span>
+                                    <span v-if="selectedUserDetail.ratingCount" class="text-[9px] text-gray-400">({{ selectedUserDetail.ratingCount }}×)</span>
                                 </div>
                             </div>
 
@@ -1400,21 +1558,21 @@ const normalizeStatus = (statusVal) => {
 const getStatusLabel = (status) => {
     const norm = normalizeStatus(status);
     switch (norm) {
-        case 0: return 'Geplant';
-        case 1: return 'Findet statt';
+        case 0: return 'Entwurf';
+        case 1: return 'Veröffentlicht';
         case 2: return 'Durchgeführt';
         case 3: return 'Abgesagt';
-        default: return 'Geplant';
+        default: return 'Entwurf';
     }
 };
 
 const getStatusBadgeClass = (status) => {
     const norm = normalizeStatus(status);
     switch (norm) {
-        case 0: // Planned
+        case 0: // Draft
+            return 'bg-gray-50 text-gray-700 border-gray-300';
+        case 1: // Published
             return 'bg-blue-50 text-blue-700 border-blue-200';
-        case 1: // TakePlace
-            return 'bg-indigo-50 text-indigo-700 border-indigo-200';
         case 2: // Accomplished
             return 'bg-emerald-50 text-emerald-700 border-emerald-200';
         case 3: // Canceled
@@ -1763,14 +1921,55 @@ const editShift = (shift) => {
     showShiftForm.value = true;
 };
 
+// Computed: Shift time constraints based on active event
+const shiftTimeMin = computed(() => {
+    const activeEv = editingEvent.value || selectedEvent.value || (showCreateModal.value ? newEvent.value : null);
+    if (!activeEv?.startDate) return '';
+    return typeof activeEv.startDate === 'string' && activeEv.startDate.length === 16 
+        ? activeEv.startDate 
+        : toLocalDatetime(activeEv.startDate);
+});
+
+const shiftTimeMax = computed(() => {
+    const activeEv = editingEvent.value || selectedEvent.value || (showCreateModal.value ? newEvent.value : null);
+    if (!activeEv?.endDate) return '';
+    return typeof activeEv.endDate === 'string' && activeEv.endDate.length === 16 
+        ? activeEv.endDate 
+        : toLocalDatetime(activeEv.endDate);
+});
+
 const saveShift = async () => {
-    if (!shiftForm.value.name) return alert("Name fehlt");
+    if (!shiftForm.value.name) return alert("Bitte geben Sie einen Namen für den Dienst ein.");
     
+    // Clamp negative values
     if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
-        return alert("Das Mindestalter darf nicht kleiner als 0 sein.");
+        shiftForm.value.ageRestriction = 0;
     }
-    if (typeof shiftForm.value.requiredHelpers === 'number' && shiftForm.value.requiredHelpers < 0) {
-        return alert("Die Anzahl der Helfer darf nicht kleiner als 0 sein.");
+    if (typeof shiftForm.value.requiredHelpers !== 'number' || shiftForm.value.requiredHelpers < 1) {
+        return alert("Die Anzahl der Helfer muss mindestens 1 betragen.");
+    }
+
+    // Validate shift times: start must be before end
+    const activeEv = editingEvent.value || selectedEvent.value || (showCreateModal.value ? newEvent.value : null);
+    const startRaw = shiftForm.value.startTime || activeEv?.startDate;
+    const endRaw = shiftForm.value.endTime || activeEv?.endDate;
+    if (startRaw && endRaw) {
+        const startDt = new Date(startRaw);
+        const endDt = new Date(endRaw);
+        if (endDt <= startDt) {
+            return alert("Das Schichtende muss nach dem Schichtstart liegen. Die Dienstzeit darf nicht negativ sein.");
+        }
+        // Validate within event timeframe
+        if (activeEv?.startDate && activeEv?.endDate) {
+            const evStart = new Date(activeEv.startDate);
+            const evEnd = new Date(activeEv.endDate);
+            if (shiftForm.value.startTime && new Date(shiftForm.value.startTime) < evStart) {
+                return alert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
+            }
+            if (shiftForm.value.endTime && new Date(shiftForm.value.endTime) > evEnd) {
+                return alert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
+            }
+        }
     }
     
     if (showCreateModal.value) {
@@ -1779,11 +1978,11 @@ const saveShift = async () => {
             const idx = newEventShifts.value.findIndex(s => s.id === shiftForm.value.id);
             if (idx !== -1) {
                 const rate = shiftRatePerHour(shiftForm.value.difficulty);
-                const startRaw = shiftForm.value.startTime || newEvent.value.startDate;
-                const endRaw = shiftForm.value.endTime || newEvent.value.endDate;
+                const sRaw = shiftForm.value.startTime || newEvent.value.startDate;
+                const eRaw = shiftForm.value.endTime || newEvent.value.endDate;
                 let calculatedPoints = 10;
-                if (startRaw && endRaw) {
-                    const h = (new Date(endRaw) - new Date(startRaw)) / (1000 * 60 * 60);
+                if (sRaw && eRaw) {
+                    const h = (new Date(eRaw) - new Date(sRaw)) / (1000 * 60 * 60);
                     if (h > 0) calculatedPoints = Math.max(1, Math.round(h * rate));
                 }
                 
@@ -1806,11 +2005,11 @@ const saveShift = async () => {
         } else {
             const tempId = -Math.floor(Math.random() * 1000000) - 1;
             const rate = shiftRatePerHour(shiftForm.value.difficulty);
-            const startRaw = shiftForm.value.startTime || newEvent.value.startDate;
-            const endRaw = shiftForm.value.endTime || newEvent.value.endDate;
+            const sRaw2 = shiftForm.value.startTime || newEvent.value.startDate;
+            const eRaw2 = shiftForm.value.endTime || newEvent.value.endDate;
             let calculatedPoints = 10;
-            if (startRaw && endRaw) {
-                const h = (new Date(endRaw) - new Date(startRaw)) / (1000 * 60 * 60);
+            if (sRaw2 && eRaw2) {
+                const h = (new Date(eRaw2) - new Date(sRaw2)) / (1000 * 60 * 60);
                 if (h > 0) calculatedPoints = Math.max(1, Math.round(h * rate));
             }
             
@@ -1834,12 +2033,12 @@ const saveShift = async () => {
         return;
     }
 
-    const activeEv = editingEvent.value || selectedEvent.value;
-    if (!activeEv) return;
+    const targetEv = editingEvent.value || selectedEvent.value;
+    if (!targetEv) return;
     try {
         const isEdit = !!shiftForm.value.id;
         const url = isEdit ? `${config.public.apiBase}/shifts/${shiftForm.value.id}` : `${config.public.apiBase}/shifts`;
-        const payload = { ...shiftForm.value, eventId: activeEv.id };
+        const payload = { ...shiftForm.value, eventId: targetEv.id };
 
         const response = await authenticatedFetch(url, {
             method: isEdit ? 'PUT' : 'POST',
@@ -1857,12 +2056,12 @@ const saveShift = async () => {
 
         resetShiftForm();
 
-        const updatedEvent = await $fetch(`${config.public.apiBase}/events/${activeEv.id}`, {
+        const updatedEvent = await $fetch(`${config.public.apiBase}/events/${targetEv.id}`, {
             params: { includeShifts: true },
             headers: { Authorization: getAuthHeader() }
         });
 
-        if (selectedEvent.value && selectedEvent.value.id === activeEv.id) {
+        if (selectedEvent.value && selectedEvent.value.id === targetEv.id) {
             selectedEvent.value = { ...updatedEvent };
         }
         
@@ -1947,6 +2146,173 @@ const updateHelperStatus = async (helper, status) => {
 
 const confirmHelper = (helper) => updateHelperStatus(helper, 1)
 const rejectHelper = (helper) => updateHelperStatus(helper, 3)
+
+// ── Event Completion ──
+const showCompleteModal = ref(false);
+const completeEvent = ref(null);
+const completeShifts = ref([]);
+const attendedUserIds = ref([]);
+const isCompleting = ref(false);
+
+const openCompleteModal = async (event) => {
+    completeEvent.value = event;
+    attendedUserIds.value = [];
+    completeShifts.value = [];
+    showCompleteModal.value = true;
+    try {
+        const data = await $fetch(`${config.public.apiBase}/events/${event.id}`, {
+            params: { includeShifts: true },
+            headers: { Authorization: getAuthHeader() }
+        });
+        const shifts = data.shifts || data.Shifts || [];
+        for (const shift of shifts) {
+            try {
+                shift.helperList = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+                    headers: { Authorization: getAuthHeader() }
+                });
+            } catch (e) { shift.helperList = []; }
+        }
+        completeShifts.value = shifts;
+        // Pre-select all confirmed helpers
+        const allConfirmed = shifts.flatMap(s => getConfirmedHelpers(s).map(h => h.userId));
+        attendedUserIds.value = [...new Set(allConfirmed)];
+    } catch (e) { console.error('Fehler beim Laden:', e); }
+};
+
+const executeComplete = async () => {
+    if (!completeEvent.value) return;
+    if (!confirm(`Veranstaltung "${completeEvent.value.title}" wirklich abschließen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    isCompleting.value = true;
+    try {
+        await $fetch(`${config.public.apiBase}/events/${completeEvent.value.id}/complete`, {
+            method: 'POST',
+            headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
+            body: { attendedUserIds: attendedUserIds.value }
+        });
+        showCompleteModal.value = false;
+        // Ask if they want to rate helpers
+        const wantRating = confirm('Event erfolgreich abgeschlossen! Möchten Sie die Helfer jetzt bewerten?');
+        await loadEvents();
+        if (wantRating) {
+            openRatingModal(completeEvent.value);
+        }
+        completeEvent.value = null;
+    } catch (e) {
+        console.error('Fehler beim Abschließen:', e);
+        alert('Fehler beim Abschließen des Events: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+    } finally { isCompleting.value = false; }
+};
+
+// ── Rating ──
+const showRatingModal = ref(false);
+const ratingEvent = ref(null);
+const ratingHelpers = ref([]);
+const isSavingRatings = ref(false);
+
+const openRatingModal = async (event) => {
+    ratingEvent.value = event;
+    ratingHelpers.value = [];
+    showRatingModal.value = true;
+    try {
+        const data = await $fetch(`${config.public.apiBase}/events/${event.id}`, {
+            params: { includeShifts: true },
+            headers: { Authorization: getAuthHeader() }
+        });
+        const shifts = data.shifts || data.Shifts || [];
+        // Load existing ratings
+        let existingRatings = [];
+        try {
+            existingRatings = await $fetch(`${config.public.apiBase}/rating/event/${event.id}`, {
+                headers: { Authorization: getAuthHeader() }
+            });
+        } catch (e) { /* no ratings yet */ }
+        
+        const helpers = [];
+        for (const shift of shifts) {
+            try {
+                const parts = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+                    headers: { Authorization: getAuthHeader() }
+                });
+                // Only completed helpers (status 2) can be rated
+                const completed = parts.filter(p => p.status === 2);
+                for (const h of completed) {
+                    const existing = existingRatings.find(r => r.userId === h.userId && r.shiftId === shift.id);
+                    helpers.push({
+                        userId: h.userId,
+                        userName: h.userName,
+                        shiftId: shift.id,
+                        shiftName: shift.name,
+                        rating: existing?.rating || 0,
+                        comment: '',
+                        existingRating: !!existing,
+                        existingComment: existing?.comment || ''
+                    });
+                }
+            } catch (e) { /* skip */ }
+        }
+        ratingHelpers.value = helpers;
+    } catch (e) { console.error('Fehler beim Laden der Bewertungsdaten:', e); }
+};
+
+const submitRatings = async () => {
+    isSavingRatings.value = true;
+    try {
+        const toSubmit = ratingHelpers.value.filter(r => r.rating > 0 && !r.existingRating);
+        for (const r of toSubmit) {
+            await $fetch(`${config.public.apiBase}/rating`, {
+                method: 'POST',
+                headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
+                body: { userId: r.userId, eventId: ratingEvent.value?.id, shiftId: r.shiftId, rating: r.rating, comment: r.comment || undefined }
+            });
+            r.existingRating = true;
+        }
+        alert(`${toSubmit.length} Bewertung(en) erfolgreich gespeichert!`);
+    } catch (e) {
+        console.error('Fehler beim Speichern der Bewertungen:', e);
+        alert('Fehler beim Speichern: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+    } finally { isSavingRatings.value = false; }
+};
+
+// ── Publish / Cancel Events ──
+const publishEvent = async (event) => {
+    if (!confirm(`Veranstaltung "${event.title}" veröffentlichen? Sie wird dann für Helfer sichtbar.`)) return;
+    try {
+        await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ ...event, eventStatus: 1 })
+        });
+        if (selectedEvent.value?.id === event.id) selectedEvent.value = null;
+        await loadEvents();
+    } catch (e) {
+        alert('Fehler beim Veröffentlichen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+    }
+};
+
+const cancelEvent = async (event) => {
+    if (!confirm(`Veranstaltung "${event.title}" wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    try {
+        await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ ...event, eventStatus: 3 })
+        });
+        if (selectedEvent.value?.id === event.id) selectedEvent.value = null;
+        await loadEvents();
+    } catch (e) {
+        alert('Fehler beim Absagen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+    }
+};
+
+const publishEventFromEdit = async () => {
+    if (!editingEvent.value) return;
+    if (!confirm('Event veröffentlichen? Es wird dann für Helfer sichtbar.')) return;
+    editForm.value.eventStatus = 1;
+};
+
+const cancelEventFromEdit = async () => {
+    if (!editingEvent.value) return;
+    if (!confirm('Event wirklich absagen?')) return;
+    editForm.value.eventStatus = 3;
+};
 
 const loadCategories = async () => {
     try {

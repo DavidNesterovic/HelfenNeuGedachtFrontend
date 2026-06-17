@@ -152,7 +152,11 @@ const fetchParticipations = async () => {
   }
 }
 
+const submittingShiftIds = reactive(new Set())
+
 const applyForShift = async (p) => {
+  if (submittingShiftIds.has(p.shiftId)) return
+  submittingShiftIds.add(p.shiftId)
   try {
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'POST',
@@ -164,10 +168,14 @@ const applyForShift = async (p) => {
     refreshCounts()
   } catch (e) {
     console.error(e)
+  } finally {
+    submittingShiftIds.delete(p.shiftId)
   }
 }
 
 const removeInterest = async (p) => {
+  if (submittingShiftIds.has(p.shiftId)) return
+  submittingShiftIds.add(p.shiftId)
   try {
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'DELETE',
@@ -179,6 +187,8 @@ const removeInterest = async (p) => {
     refreshCounts()
   } catch (e) {
     console.error(e)
+  } finally {
+    submittingShiftIds.delete(p.shiftId)
   }
 }
 

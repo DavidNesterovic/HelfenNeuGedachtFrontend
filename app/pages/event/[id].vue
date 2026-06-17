@@ -25,10 +25,16 @@
         <div class="flex flex-col gap-4">
           <div class="relative h-48 w-full overflow-hidden rounded-2xl bg-slate-200">
             <img
+              v-if="imageUrl"
               :src="imageUrl"
               :alt="event.title"
               class="h-full w-full object-cover"
             >
+            <div v-else class="h-full w-full flex items-center justify-center">
+              <svg class="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
           </div>
 
           <div class="min-w-0 flex-1">
@@ -56,11 +62,11 @@
               <span v-else-if="normalizedStatus === 2" class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-600">
                 Durchgeführt
               </span>
-              <span v-else-if="normalizedStatus === 1" class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600">
-                Findet statt
+              <span v-else-if="normalizedStatus === 1" class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">
+                Veröffentlicht
               </span>
               <span v-else class="rounded-xl bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-500">
-                Geplant
+                Entwurf
               </span>
             </div>
           </div>
@@ -163,8 +169,9 @@ const closeOrgPopup = () => {
 const interestedShiftIds = ref(new Set())
 const submittingShiftIds = reactive(new Set())
 
+const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const imageUrl = computed(() =>
-  `https://picsum.photos/seed/event-${eventId}/600/400`
+  event.value?.imageUrl ? `${apiBase.value}${event.value.imageUrl}` : null
 )
 
 const organizationName = ref('')
@@ -225,7 +232,11 @@ const normalizeStatus = (statusVal) => {
 
 const normalizedStatus = computed(() => {
   if (!event.value) return 0
-  return event.value.status
+  const raw = event.value.eventStatus !== undefined ? event.value.eventStatus :
+              event.value.EventStatus !== undefined ? event.value.EventStatus :
+              event.value.status !== undefined ? event.value.status :
+              event.value.Status;
+  return normalizeStatus(raw)
 })
 
 const toggleShiftInterest = async (shiftId) => {

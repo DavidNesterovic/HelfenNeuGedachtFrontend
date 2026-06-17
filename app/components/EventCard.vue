@@ -42,11 +42,11 @@
           <span v-else-if="normalizedStatus === 2" class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1 text-sm font-semibold text-emerald-600">
             Durchgeführt
           </span>
-          <span v-else-if="normalizedStatus === 1" class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-1 text-sm font-semibold text-indigo-600">
-            Findet statt
+          <span v-else-if="normalizedStatus === 1" class="rounded-xl bg-blue-50 border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-600">
+            Veröffentlicht
           </span>
           <span v-else class="rounded-xl bg-slate-100 border border-slate-200 px-3 py-1 text-sm text-slate-500">
-            Geplant
+            Entwurf
           </span>
         </div>
       </div>
