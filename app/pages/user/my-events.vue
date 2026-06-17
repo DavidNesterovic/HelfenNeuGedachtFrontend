@@ -109,6 +109,7 @@ definePageMeta({ layout: 'user', middleware: 'auth' })
 const config = useRuntimeConfig()
 const { refresh: refreshCounts } = useParticipationCounts()
 const { show: showSnack } = useSnackbar()
+const { confirm: showDialogConfirm } = useDialog()
 const pending = ref(true)
 const participations = ref([])
 
@@ -140,7 +141,7 @@ const fetchParticipations = async () => {
 }
 
 const cancelParticipation = async (p) => {
-  if (!confirm('Möchtest du diesen Einsatz wirklich absagen?')) return
+  if (!await showDialogConfirm('Möchtest du diesen Einsatz wirklich absagen?')) return
   try {
     await $fetch(`${config.public.apiBase}/Participation`, {
       method: 'POST',

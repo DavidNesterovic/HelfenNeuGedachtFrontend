@@ -371,6 +371,7 @@ import { getAuthHeader, getToken, getUserInfo } from '../../assets/utils/auth';
 
 definePageMeta({ middleware: 'auth' })
 
+const { confirm: showDialogConfirm } = useDialog();
 const config = useRuntimeConfig();
 const eventsCount = ref(0);
 const shiftsCount = ref(0);
@@ -515,7 +516,7 @@ const rejectParticipation = async (participation) => {
 };
 
 const pushEvent = async (event) => {
-  const confirmed = confirm(
+  const confirmed = await showDialogConfirm(
     `Möchten Sie die Veranstaltung „${event.title}" wirklich an alle Helfer per E-Mail bewerben?\n\nDies sendet eine E-Mail an alle registrierten Nutzer.`
   );
   if (!confirmed) return;
@@ -552,7 +553,7 @@ const pushEvent = async (event) => {
 };
 
 const pushEventInterested = async (event) => {
-  const confirmed = confirm(
+  const confirmed = await showDialogConfirm(
     `Möchten Sie die Veranstaltung „${event.title}" nur an interessierte/bestätigte Helfer per E-Mail senden?\n\nDies sendet eine E-Mail nur an Nutzer, die sich bereits für einen Dienst angemeldet haben.`
   );
   if (!confirmed) return;

@@ -119,6 +119,7 @@ const orgData = ref({
 const isLoading = ref(true);
 const errorMessage = ref('');
 const organizationId = ref(null);
+const { alert: showDialogAlert } = useDialog();
 
 const authHeaders = () => {
   const token = getToken();
@@ -170,9 +171,9 @@ const saveChanges = async () => {
         headers: authHeaders()
       }
     );
-    alert('Änderungen erfolgreich gespeichert!');
+    await showDialogAlert('Änderungen erfolgreich gespeichert!');
   } catch (error) {
-    alert('Fehler beim Speichern der Änderungen.');
+    await showDialogAlert('Fehler beim Speichern der Änderungen.');
   }
 };
 </script>

@@ -6,5 +6,7 @@
       <NuxtRouteAnnouncer />
       <NuxtPage />
     </nuxt-layout>
+    <AppDialog />
+    <AppSnackbar />
   </div>
 </template>

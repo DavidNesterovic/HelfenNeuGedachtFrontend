@@ -335,6 +335,8 @@ import { saveToken, getHomeRoute } from '~/assets/utils/auth'
 
 definePageMeta({ layout: false })
 
+const { alert: showDialogAlert } = useDialog()
+
 const wizardSteps = ['Kontakt-Informationen', 'Organisation-Details', 'Bestätigung']
 
 const currentStep = ref(1)
@@ -377,8 +379,8 @@ const clearError = () => {
   errorMessage.value = ''
 }
 
-const showPlaceholderAlert = (label: string) => {
-  alert(`${label} (noch nicht verfügbar)`)
+const showPlaceholderAlert = async (label: string) => {
+  await showDialogAlert(`${label} (noch nicht verfügbar)`)
 }
 
 const validateStep = (step: number) => {

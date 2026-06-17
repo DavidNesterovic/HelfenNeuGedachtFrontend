@@ -1012,6 +1012,15 @@
                     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
                         <strong>Anwesenheit bestätigen:</strong> Markieren Sie alle Helfer:innen, die tatsächlich beim Event anwesend waren. Anwesende erhalten ihre Punkte gutgeschrieben.
                     </div>
+                    <div v-if="completeEvent && new Date(completeEvent.endDate) > new Date()" 
+                        class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 flex items-start gap-2.5">
+                        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <strong>Hinweis:</strong> Sie schließen eine Veranstaltung ab, deren Enddatum in der Zukunft liegt ({{ formatDate(completeEvent.endDate) }}).
+                        </div>
+                    </div>
                     <div v-for="shift in completeShifts" :key="shift.id" class="space-y-2">
                         <h4 class="font-bold text-gray-800 text-sm uppercase tracking-wide flex items-center gap-2">
                             <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -1202,6 +1211,7 @@ import { getAuthHeader, logout, authenticatedFetch, getUserInfo } from '../../as
 definePageMeta({ middleware: 'auth' })
 
 const config = useRuntimeConfig();
+const { alert: showDialogAlert, confirm: showDialogConfirm } = useDialog();
 const apiBase = computed(() => config.public.apiBase.replace('/api', ''))
 const events = ref([]);
 const isLoading = ref(true);
@@ -1698,7 +1708,7 @@ const saveEvent = async () => {
         closeCreateModal();
         await loadEvents();
     } catch (error) {
-        alert("Fehler beim Speichern der Veranstaltung.");
+        await showDialogAlert("Fehler beim Speichern der Veranstaltung.");
         console.error(error);
     } finally {
         isSubmitting.value = false;
@@ -1708,15 +1718,15 @@ const saveEvent = async () => {
 const deleteEvent = async (id) => {
     const event = events.value.find(e => e.id === id);
     if (event && event.eventStatus !== 0) {
-        alert("Nur geplante Veranstaltungen können gelöscht werden.");
+        await showDialogAlert("Nur geplante Veranstaltungen können gelöscht werden.");
         return;
     }
-    if (!confirm("Veranstaltung wirklich löschen?")) return;
+    if (!await showDialogConfirm("Veranstaltung wirklich löschen?")) return;
     try {
         await authenticatedFetch(`${config.public.apiBase}/events/${id}`, { method: 'DELETE' });
         await loadEvents();
     } catch (error) {
-        alert("Fehler beim Löschen.");
+        await showDialogAlert("Fehler beim Löschen.");
     }
 };
 
@@ -1828,7 +1838,7 @@ const updateEvent = async () => {
         closeEdit();
         await loadEvents();
     } catch (error) {
-        alert("Fehler beim Aktualisieren des Events.");
+        await showDialogAlert("Fehler beim Aktualisieren des Events.");
         console.error(error);
     } finally {
         isUpdatingEvent.value = false;
@@ -1939,14 +1949,18 @@ const shiftTimeMax = computed(() => {
 });
 
 const saveShift = async () => {
-    if (!shiftForm.value.name) return alert("Bitte geben Sie einen Namen für den Dienst ein.");
+    if (!shiftForm.value.name) {
+        await showDialogAlert("Bitte geben Sie einen Namen für den Dienst ein.");
+        return;
+    }
     
     // Clamp negative values
     if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
         shiftForm.value.ageRestriction = 0;
     }
     if (typeof shiftForm.value.requiredHelpers !== 'number' || shiftForm.value.requiredHelpers < 1) {
-        return alert("Die Anzahl der Helfer muss mindestens 1 betragen.");
+        await showDialogAlert("Die Anzahl der Helfer muss mindestens 1 betragen.");
+        return;
     }
 
     // Validate shift times: start must be before end
@@ -1957,17 +1971,20 @@ const saveShift = async () => {
         const startDt = new Date(startRaw);
         const endDt = new Date(endRaw);
         if (endDt <= startDt) {
-            return alert("Das Schichtende muss nach dem Schichtstart liegen. Die Dienstzeit darf nicht negativ sein.");
+            await showDialogAlert("Das Schichtende muss nach dem Schichtstart liegen. Die Dienstzeit darf nicht negativ sein.");
+            return;
         }
         // Validate within event timeframe
         if (activeEv?.startDate && activeEv?.endDate) {
             const evStart = new Date(activeEv.startDate);
             const evEnd = new Date(activeEv.endDate);
             if (shiftForm.value.startTime && new Date(shiftForm.value.startTime) < evStart) {
-                return alert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
+                await showDialogAlert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
+                return;
             }
             if (shiftForm.value.endTime && new Date(shiftForm.value.endTime) > evEnd) {
-                return alert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
+                await showDialogAlert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
+                return;
             }
         }
     }
@@ -2087,12 +2104,12 @@ const saveShift = async () => {
 
         loadEvents();
     } catch (error) {
-        alert("Fehler beim Speichern des Dienstes.");
+        await showDialogAlert("Fehler beim Speichern des Dienstes.");
     }
 };
 
-const deleteShift = (shiftId) => {
-    if (!confirm("Dienst löschen?")) return;
+const deleteShift = async (shiftId) => {
+    if (!await showDialogConfirm("Dienst löschen?")) return;
     
     if (showCreateModal.value) {
         newEventShifts.value = newEventShifts.value.filter(s => s.id !== shiftId);
@@ -2134,10 +2151,10 @@ const updateHelperStatus = async (helper, status) => {
                 if (row) row.promisedHelpers = activeEv.promisedHelpers
             }
         } else {
-            alert('Fehler beim Aktualisieren des Status.')
+            await showDialogAlert('Fehler beim Aktualisieren des Status.')
         }
     } catch (error) {
-        alert('Fehler beim Aktualisieren des Status.')
+        await showDialogAlert('Fehler beim Aktualisieren des Status.')
         console.error(error)
     } finally {
         helper._updating = false
@@ -2181,7 +2198,7 @@ const openCompleteModal = async (event) => {
 
 const executeComplete = async () => {
     if (!completeEvent.value) return;
-    if (!confirm(`Veranstaltung "${completeEvent.value.title}" wirklich abschließen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    if (!await showDialogConfirm(`Veranstaltung "${completeEvent.value.title}" wirklich abschließen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
     isCompleting.value = true;
     try {
         await $fetch(`${config.public.apiBase}/events/${completeEvent.value.id}/complete`, {
@@ -2191,7 +2208,7 @@ const executeComplete = async () => {
         });
         showCompleteModal.value = false;
         // Ask if they want to rate helpers
-        const wantRating = confirm('Event erfolgreich abgeschlossen! Möchten Sie die Helfer jetzt bewerten?');
+        const wantRating = await showDialogConfirm('Event erfolgreich abgeschlossen! Möchten Sie die Helfer jetzt bewerten?');
         await loadEvents();
         if (wantRating) {
             openRatingModal(completeEvent.value);
@@ -2199,7 +2216,7 @@ const executeComplete = async () => {
         completeEvent.value = null;
     } catch (e) {
         console.error('Fehler beim Abschließen:', e);
-        alert('Fehler beim Abschließen des Events: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+        await showDialogAlert('Fehler beim Abschließen des Events: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
     } finally { isCompleting.value = false; }
 };
 
@@ -2266,16 +2283,16 @@ const submitRatings = async () => {
             });
             r.existingRating = true;
         }
-        alert(`${toSubmit.length} Bewertung(en) erfolgreich gespeichert!`);
+        await showDialogAlert(`${toSubmit.length} Bewertung(en) erfolgreich gespeichert!`);
     } catch (e) {
         console.error('Fehler beim Speichern der Bewertungen:', e);
-        alert('Fehler beim Speichern: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+        await showDialogAlert('Fehler beim Speichern: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
     } finally { isSavingRatings.value = false; }
 };
 
 // ── Publish / Cancel Events ──
 const publishEvent = async (event) => {
-    if (!confirm(`Veranstaltung "${event.title}" veröffentlichen? Sie wird dann für Helfer sichtbar.`)) return;
+    if (!await showDialogConfirm(`Veranstaltung "${event.title}" veröffentlichen? Sie wird dann für Helfer sichtbar.`)) return;
     try {
         await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
             method: 'PUT',
@@ -2284,12 +2301,12 @@ const publishEvent = async (event) => {
         if (selectedEvent.value?.id === event.id) selectedEvent.value = null;
         await loadEvents();
     } catch (e) {
-        alert('Fehler beim Veröffentlichen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+        await showDialogAlert('Fehler beim Veröffentlichen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
     }
 };
 
 const cancelEvent = async (event) => {
-    if (!confirm(`Veranstaltung "${event.title}" wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    if (!await showDialogConfirm(`Veranstaltung "${event.title}" wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
     try {
         await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
             method: 'PUT',
@@ -2298,19 +2315,19 @@ const cancelEvent = async (event) => {
         if (selectedEvent.value?.id === event.id) selectedEvent.value = null;
         await loadEvents();
     } catch (e) {
-        alert('Fehler beim Absagen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
+        await showDialogAlert('Fehler beim Absagen: ' + (e.data?.message || e.message || 'Unbekannter Fehler'));
     }
 };
 
 const publishEventFromEdit = async () => {
     if (!editingEvent.value) return;
-    if (!confirm('Event veröffentlichen? Es wird dann für Helfer sichtbar.')) return;
+    if (!await showDialogConfirm('Event veröffentlichen? Es wird dann für Helfer sichtbar.')) return;
     editForm.value.eventStatus = 1;
 };
 
 const cancelEventFromEdit = async () => {
     if (!editingEvent.value) return;
-    if (!confirm('Event wirklich absagen?')) return;
+    if (!await showDialogConfirm('Event wirklich absagen?')) return;
     editForm.value.eventStatus = 3;
 };
 

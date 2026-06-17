@@ -8,8 +8,6 @@
     <div class="w-full md:w-auto">
       <BottomNav />
     </div>
-
-    <AppSnackbar />
   </div>
 </template>
 

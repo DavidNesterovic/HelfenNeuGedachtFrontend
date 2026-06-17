@@ -261,6 +261,7 @@ const shifts = ref([]);
 const events = ref([]);
 const availableCategories = ref([]);
 const config = useRuntimeConfig();
+const { alert: showDialogAlert, confirm: showDialogConfirm } = useDialog();
 
 // Search & Filter State
 const searchQuery = ref('');
@@ -447,20 +448,20 @@ const openEditModal = (shift) => {
 
 const saveShift = async (isEdit = false) => {
     if (!shiftForm.value.name) {
-        alert("Bitte geben Sie einen Namen für den Dienst ein.");
+        await showDialogAlert("Bitte geben Sie einen Namen für den Dienst ein.");
         return;
     }
     if (typeof shiftForm.value.ageRestriction === 'number' && shiftForm.value.ageRestriction < 0) {
         shiftForm.value.ageRestriction = 0;
     }
     if (typeof shiftForm.value.requiredHelpers !== 'number' || shiftForm.value.requiredHelpers < 1) {
-        alert("Die Anzahl der Helfer muss mindestens 1 betragen.");
+        await showDialogAlert("Die Anzahl der Helfer muss mindestens 1 betragen.");
         return;
     }
     // Validate shift times
     if (shiftForm.value.startTime && shiftForm.value.endTime) {
         if (new Date(shiftForm.value.endTime) <= new Date(shiftForm.value.startTime)) {
-            alert("Das Schichtende muss nach dem Schichtstart liegen.");
+            await showDialogAlert("Das Schichtende muss nach dem Schichtstart liegen.");
             return;
         }
     }
@@ -469,11 +470,11 @@ const saveShift = async (isEdit = false) => {
         const ev = events.value.find(e => e.id === shiftForm.value.eventId);
         if (ev) {
             if (shiftForm.value.startTime && ev.startDate && new Date(shiftForm.value.startTime) < new Date(ev.startDate)) {
-                alert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
+                await showDialogAlert("Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.");
                 return;
             }
             if (shiftForm.value.endTime && ev.endDate && new Date(shiftForm.value.endTime) > new Date(ev.endDate)) {
-                alert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
+                await showDialogAlert("Das Schichtende darf nicht nach dem Veranstaltungsende liegen.");
                 return;
             }
         }
@@ -496,14 +497,14 @@ const saveShift = async (isEdit = false) => {
         
         await loadData();
     } catch (error) {
-        alert("Fehler beim Speichern: " + error.message);
+        await showDialogAlert("Fehler beim Speichern: " + error.message);
     } finally {
         isSubmitting.value = false;
     }
 };
 
 const deleteShift = async (id) => {
-    if (!confirm("Diesen Dienst wirklich löschen?")) return;
+    if (!await showDialogConfirm("Diesen Dienst wirklich löschen?")) return;
     try {
         await authenticatedFetch(`${config.public.apiBase}/shifts/${id}`, {
             method: 'DELETE'
@@ -512,7 +513,7 @@ const deleteShift = async (id) => {
         
         await loadData();
     } catch (error) {
-        alert("Löschen fehlgeschlagen");
+        await showDialogAlert("Löschen fehlgeschlagen");
     }
 };
 
