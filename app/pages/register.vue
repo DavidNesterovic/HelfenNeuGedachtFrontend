@@ -1,95 +1,24 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+  <div class="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-sm">
       <div class="text-center mb-8">
         <div class="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center text-2xl font-bold mx-auto mb-4">H</div>
-        <h1 class="text-2xl font-bold text-gray-900">Als Helfer registrieren</h1>
-        <p class="mt-1.5 text-sm text-gray-500">Kostenlos mitmachen und Gutes tun</p>
+        <h1 class="text-2xl font-bold text-slate-900">Als Helfer registrieren</h1>
+        <p class="mt-1.5 text-sm text-slate-500">Kostenlos mitmachen und Gutes tun</p>
       </div>
 
-      <div
-        v-if="errorMessage"
-        class="mb-5 rounded-lg bg-red-50 border-l-4 border-red-500 px-4 py-3 text-sm text-red-700"
-      >
-        {{ errorMessage }}
-      </div>
+      <AppAlert type="error" :message="errorMessage" class="mb-5" />
 
-      <form @submit.prevent="register" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-5">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="username">
-            Benutzername
-          </label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            placeholder="z.B. max.mustermann"
-            required
-            autofocus
-          >
-        </div>
+      <form @submit.prevent="register" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+        <AppField v-model="username" label="Benutzername" placeholder="z.B. max.mustermann" :required="true" autofocus />
+        <AppField v-model="email" type="email" label="E-Mail-Adresse" placeholder="ihre.email@beispiel.at" :required="true" />
+        <AppField v-model="dateOfBirth" type="date" label="Geburtsdatum" :max="maxDateOfBirth" :required="true" />
+        <AppField v-model="password" type="password" label="Passwort" placeholder="Mindestens 8 Zeichen" :required="true" />
+        <AppField v-model="passwordConfirm" type="password" label="Passwort bestätigen" placeholder="Passwort wiederholen" :required="true" />
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="email">
-            E-Mail-Adresse
-          </label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            placeholder="ihre.email@beispiel.at"
-            required
-          >
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="dateOfBirth">
-            Geburtsdatum
-          </label>
-          <input
-            id="dateOfBirth"
-            v-model="dateOfBirth"
-            type="date"
-            :max="maxDateOfBirth"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            required
-          >
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="password">
-            Passwort
-          </label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            placeholder="Mindestens 8 Zeichen"
-            required
-          >
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5" for="passwordConfirm">
-            Passwort bestätigen
-          </label>
-          <input
-            id="passwordConfirm"
-            v-model="passwordConfirm"
-            type="password"
-            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-            placeholder="Passwort wiederholen"
-            required
-          >
-        </div>
-
-        <!-- Kategorie-Auswahl (optional) -->
         <div v-if="categories.length > 0">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Interessen <span class="text-gray-400 font-normal">(optional)</span>
+          <label class="block text-sm font-medium text-slate-700 mb-2">
+            Interessen <span class="text-slate-400 font-normal">(optional)</span>
           </label>
           <div class="flex flex-wrap gap-2">
             <label
@@ -98,43 +27,25 @@
               class="inline-flex items-center gap-1.5 cursor-pointer select-none rounded-full border px-3 py-1.5 text-sm transition"
               :class="selectedCategories.includes(cat.id)
                 ? 'bg-blue-50 border-blue-300 text-blue-700'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'"
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'"
             >
-              <input
-                type="checkbox"
-                :value="cat.id"
-                v-model="selectedCategories"
-                class="sr-only"
-              >
-              <span
-                v-if="selectedCategories.includes(cat.id)"
-                class="text-blue-500 text-xs"
-              >✓</span>
+              <input type="checkbox" :value="cat.id" v-model="selectedCategories" class="sr-only">
+              <span v-if="selectedCategories.includes(cat.id)" class="text-blue-500 text-xs">✓</span>
               {{ cat.name }}
             </label>
           </div>
         </div>
 
-        <button
-          type="submit"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60"
-          :disabled="loading"
-        >
+        <AppButton type="submit" class="w-full" size="lg" :loading="loading">
           {{ loading ? 'Registrierung läuft...' : 'Jetzt registrieren' }}
-        </button>
+        </AppButton>
       </form>
 
-      <div class="mt-6 text-center border-t border-gray-200 pt-6 space-y-3">
-        <NuxtLink
-          to="/login"
-          class="block text-sm text-gray-500 hover:text-gray-700 transition"
-        >
+      <div class="mt-6 text-center border-t border-slate-200 pt-6 space-y-3">
+        <NuxtLink to="/login" class="block text-sm text-slate-500 hover:text-slate-700 transition">
           Bereits registriert? <span class="text-blue-600 font-medium">Zum Login</span>
         </NuxtLink>
-        <NuxtLink
-          to="/organization_registration"
-          class="block text-sm text-gray-500 hover:text-gray-700 transition"
-        >
+        <NuxtLink to="/organization_registration" class="block text-sm text-slate-500 hover:text-slate-700 transition">
           Organisation registrieren? <span class="text-blue-600 font-medium">Hier klicken</span>
         </NuxtLink>
       </div>
@@ -160,7 +71,6 @@ const errorMessage = ref('')
 const loading = ref(false)
 let errorTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Maximales Geburtsdatum = heute (muss in der Vergangenheit liegen)
 const maxDateOfBirth = computed(() => {
   const today = new Date()
   return today.toISOString().split('T')[0]
@@ -172,15 +82,11 @@ const showError = (message: string) => {
   errorTimeout = setTimeout(() => { errorMessage.value = '' }, 5000)
 }
 
-// Kategorien beim Laden der Seite abrufen
 const loadCategories = async () => {
   try {
-    const data = await $fetch<{ id: number; name: string }[]>(
-      `${config.public.apiBase}/categories`
-    )
+    const data = await $fetch<{ id: number; name: string }[]>(`${config.public.apiBase}/categories`)
     categories.value = data || []
   } catch (e) {
-    // Kategorien sind optional – Fehler still ignorieren
     console.warn('Kategorien konnten nicht geladen werden:', e)
   }
 }
@@ -204,7 +110,6 @@ const register = async () => {
     return
   }
 
-  // Geburtsdatum muss in der Vergangenheit liegen
   const dob = new Date(dateOfBirth.value)
   if (isNaN(dob.getTime()) || dob >= new Date()) {
     showError('Bitte geben Sie ein gültiges Geburtsdatum ein.')
@@ -228,7 +133,7 @@ const register = async () => {
       username: trimmedUsername,
       email: trimmedEmail,
       password: password.value,
-      dateOfBirth: dateOfBirth.value, // ISO-Format "YYYY-MM-DD"
+      dateOfBirth: dateOfBirth.value,
     }
 
     if (selectedCategories.value.length > 0) {
@@ -239,14 +144,12 @@ const register = async () => {
       success: boolean
       message?: string
       token?: string
-      expiration?: string
     }>(`${config.public.apiBase}/authenticate/register`, {
       method: 'POST',
       body,
     })
 
     if (response.success && response.token) {
-      // Auto-Login: Token speichern und direkt weiterleiten
       saveToken(response.token)
       await navigateTo(getHomeRoute())
       return
@@ -254,9 +157,7 @@ const register = async () => {
 
     showError(response.message || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.')
   } catch (error: any) {
-    showError(
-      error?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
-    )
+    showError(error?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.')
   } finally {
     loading.value = false
   }

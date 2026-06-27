@@ -7,29 +7,23 @@
       </div>
     </div>
 
-    <div v-if="pending" class="flex flex-col items-center justify-center py-20 gap-3">
-      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-slate-400 text-sm font-medium">Wird geladen...</p>
-    </div>
+    <AppSpinner v-if="pending" text="Wird geladen..." />
 
     <template v-else-if="interestedParticipations.length === 0">
-      <div class="flex flex-col items-center justify-center my-16 text-center max-w-md mx-auto p-6 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-        <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-5 text-blue-600">
-          <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current" stroke="currentColor" stroke-width="1.5">
+      <AppEmptyState
+        heading="Noch keine Einsätze markiert"
+        subtext="Entdecke spannende Aufgaben und markiere die, die dich interessieren."
+        icon-bg="bg-blue-50"
+      >
+        <template #icon>
+          <svg viewBox="0 0 24 24" class="h-7 w-7 text-blue-600 fill-current" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.239-4.5-5-4.5-1.74 0-3.27.81-4 2.03-.73-1.22-2.26-2.03-4-2.03-2.761 0-5 2.015-5 4.5 0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
-        </div>
-        <h2 class="text-lg font-semibold text-slate-900">Noch keine Einsätze markiert</h2>
-        <p class="mt-2 text-sm text-slate-500 leading-relaxed">
-          Entdecke spannende Aufgaben und markiere die, die dich interessieren.
-        </p>
-        <NuxtLink
-          to="/events"
-          class="mt-6 inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 transition-colors"
-        >
-          Einsätze entdecken
-        </NuxtLink>
-      </div>
+        </template>
+        <template #action>
+          <AppButton :as="resolveComponent('NuxtLink')" to="/events" class="mt-6">Einsätze entdecken</AppButton>
+        </template>
+      </AppEmptyState>
     </template>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">

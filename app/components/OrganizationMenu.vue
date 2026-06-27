@@ -1,16 +1,16 @@
 <template>
-  <aside class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50">
-    <div class="px-6 py-5 flex items-center gap-3 border-b border-gray-200">
+  <aside class="fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 flex flex-col z-50">
+    <div class="px-6 py-5 flex items-center gap-3 border-b border-slate-200">
       <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shrink-0">
         H
       </div>
-      <span class="text-[15px] font-semibold text-gray-900 leading-tight">Helfen neu<br>gedacht</span>
+      <span class="text-[15px] font-semibold text-slate-900 leading-tight">Helfen neu<br>gedacht</span>
     </div>
 
     <nav class="px-3 py-5 flex flex-col gap-1 flex-1">
       <NuxtLink
         to="/organization/dashboard"
-        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         exact-active-class="!bg-blue-600 !text-white hover:!bg-blue-700 hover:!text-white"
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,7 +21,7 @@
 
       <NuxtLink
         to="/organization/events"
-        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         exact-active-class="!bg-blue-600 !text-white hover:!bg-blue-700 hover:!text-white"
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +32,7 @@
 
       <NuxtLink
         to="/organization/shifts"
-        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         exact-active-class="!bg-blue-600 !text-white hover:!bg-blue-700 hover:!text-white"
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +43,7 @@
 
       <NuxtLink
         to="/organization"
-        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
         exact-active-class="!bg-blue-600 !text-white hover:!bg-blue-700 hover:!text-white"
       >
         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@
     <div class="px-3 pb-5">
       <button
         @click="logout"
-        class="w-full flex items-center justify-center gap-2 border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+        class="w-full flex items-center justify-center gap-2 border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
       >
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

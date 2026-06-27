@@ -28,21 +28,6 @@
           >
         </div>
 
-        <!-- Schnellfilter (Slider auf Mobile/Tablet, Liste auf Desktop) -->
-        <!-- <div class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
-          <h3 class="hidden lg:block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Zeitraum & Dauer</h3>
-          <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide flex-nowrap lg:flex-wrap">
-            <FilterChip
-              v-for="f in quickFilters"
-              :key="f.key"
-              :active="filters.quickFilter === f.key"
-              @click="toggleQuickFilter(f.key)"
-              class="shrink-0 lg:w-full lg:justify-start"
-            >
-              {{ f.label }}
-            </FilterChip>
-          </div>
-        </div> -->
 
         <!-- Kategorien (Slider auf Mobile/Tablet, Liste auf Desktop) -->
         <div v-if="categories.length > 0" class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
@@ -70,34 +55,33 @@
       <div class="lg:col-span-2 xl:col-span-3">
         
         <!-- Loading State -->
-        <div v-if="pending" class="flex flex-col items-center justify-center py-24 gap-3 bg-white rounded-3xl border border-slate-100 shadow-sm">
-          <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-slate-400 text-sm font-medium">Einsätze werden geladen...</p>
+        <div v-if="pending" class="bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <AppSpinner text="Einsätze werden geladen..." />
         </div>
 
         <!-- Error State -->
-        <div v-else-if="error" class="rounded-3xl bg-red-50/50 border border-red-100 p-8 text-center max-w-md mx-auto">
-          <div class="mx-auto w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600 mb-3">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 class="text-sm font-semibold text-slate-900">Fehler beim Laden</h3>
-          <p class="text-xs text-red-600/80 mt-1 mb-4">Die Einsätze konnten nicht abgerufen werden.</p>
-          <button @click="loadEvents" class="inline-flex items-center justify-center px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition">
-            Erneut versuchen
-          </button>
+        <div v-else-if="error" class="rounded-3xl bg-red-50/50 border border-red-100">
+          <AppEmptyState heading="Fehler beim Laden" subtext="Die Einsätze konnten nicht abgerufen werden." icon-bg="bg-red-100">
+            <template #icon>
+              <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </template>
+            <template #action>
+              <AppButton variant="danger" size="sm" class="mt-4" @click="loadEvents">Erneut versuchen</AppButton>
+            </template>
+          </AppEmptyState>
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="filteredEvents.length === 0" class="rounded-3xl bg-white p-12 text-center border border-dashed border-slate-200 max-w-md mx-auto">
-          <div class="mx-auto w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 mb-4">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" />
-            </svg>
-          </div>
-          <h3 class="text-sm font-semibold text-slate-900">Keine passenden Einsätze</h3>
-          <p class="text-xs text-slate-500 mt-1">Ändere deine Suchkriterien oder setze die Filter zurück, um mehr Ergebnisse zu sehen.</p>
+        <div v-else-if="filteredEvents.length === 0" class="rounded-3xl bg-white border border-dashed border-slate-200">
+          <AppEmptyState heading="Keine passenden Einsätze" subtext="Ändere deine Suchkriterien oder setze die Filter zurück.">
+            <template #icon>
+              <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" />
+              </svg>
+            </template>
+          </AppEmptyState>
         </div>
 
         <!-- Cards Grid (2 Spalten auf XL-Desktops) -->
@@ -168,15 +152,8 @@ const config = useRuntimeConfig()
 
 const filters = ref({
   search: '',
-  quickFilter: null,
   categories: [],
 })
-
-const quickFilters = [
-  { key: 'today', label: 'Heute' },
-  { key: 'weekend', label: 'Dieses Wochenende' },
-  { key: 'short', label: 'Kurze Einsätze (<2h)' },
-]
 
 const categories = ref([])
 
@@ -201,10 +178,6 @@ const closeOrgPopup = () => {
   selectedOrgId.value = null
 }
 
-const toggleQuickFilter = (key) => {
-  filters.value.quickFilter = filters.value.quickFilter === key ? null : key
-}
-
 const toggleCategory = (id) => {
   const idx = filters.value.categories.indexOf(id)
   if (idx === -1) filters.value.categories.push(id)
@@ -220,29 +193,6 @@ const filteredEvents = computed(() => {
       e.title?.toLowerCase().includes(q) ||
       e.location?.toLowerCase().includes(q)
     )
-  }
-
-  if (filters.value.quickFilter === 'today') {
-    const todayStr = new Date().toDateString()
-    result = result.filter(e => new Date(e.startDate).toDateString() === todayStr)
-  } else if (filters.value.quickFilter === 'weekend') {
-    const today = new Date()
-    const daysToSat = (6 - today.getDay() + 7) % 7
-    const sat = new Date(today)
-    sat.setDate(today.getDate() + daysToSat)
-    const sun = new Date(sat)
-    sun.setDate(sat.getDate() + 1)
-    const satStr = sat.toDateString()
-    const sunStr = sun.toDateString()
-    result = result.filter(e => {
-      const s = new Date(e.startDate).toDateString()
-      return s === satStr || s === sunStr
-    })
-  } else if (filters.value.quickFilter === 'short') {
-    result = result.filter(e => {
-      const ms = new Date(e.endDate) - new Date(e.startDate)
-      return ms > 0 && ms < 2 * 60 * 60 * 1000
-    })
   }
 
   if (filters.value.categories.length > 0) {

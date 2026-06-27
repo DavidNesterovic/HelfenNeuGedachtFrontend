@@ -8,26 +8,19 @@
     <div class="mt-6">
       <h2 class="text-[15px] font-semibold text-slate-900 mb-3">Anstehend</h2>
 
-      <div v-if="pending" class="rounded-2xl bg-white p-5 shadow-sm border border-blue-100 text-sm text-slate-400">
-        Wird geladen...
-      </div>
+      <AppSpinner v-if="pending" text="Wird geladen..." padding="sm" />
 
-      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white p-6 shadow-sm border border-blue-100 text-center">
-        <div class="flex justify-center mb-4">
-          <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+      <div v-else-if="confirmedParticipations.length === 0" class="rounded-2xl bg-white shadow-sm border border-blue-100">
+        <AppEmptyState heading="Keine anstehenden Einsätze" subtext="Du hast dich noch für keinen Einsatz angemeldet.">
+          <template #icon>
             <svg viewBox="0 0 24 24" class="h-7 w-7 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" />
             </svg>
-          </div>
-        </div>
-        <p class="font-semibold text-slate-900 text-[15px]">Keine anstehenden Einsätze</p>
-        <p class="mt-1.5 text-sm text-blue-500">Du hast dich noch für keinen Einsatz angemeldet.</p>
-        <NuxtLink
-          to="/events"
-          class="mt-5 inline-block rounded-2xl bg-blue-600 px-8 py-3 text-white font-medium text-[14px]"
-        >
-          Einsätze entdecken
-        </NuxtLink>
+          </template>
+          <template #action>
+            <AppButton :as="resolveComponent('NuxtLink')" to="/events" class="mt-5">Einsätze entdecken</AppButton>
+          </template>
+        </AppEmptyState>
       </div>
 
       <div v-else class="space-y-3">
