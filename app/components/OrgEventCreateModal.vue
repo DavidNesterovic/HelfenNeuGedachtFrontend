@@ -206,7 +206,12 @@ const resetShiftForm = () => {
   shiftForm.value = { id: null, name: '', description: '', requiredHelpers: 1, ageRestriction: 0, difficulty: 0, startTime: '', endTime: '', categoryIds: [] }
 }
 
-const startAddShift = () => { resetShiftForm(); showShiftForm.value = true }
+const startAddShift = () => {
+  resetShiftForm()
+  shiftForm.value.startTime = newEvent.value.startDate || ''
+  shiftForm.value.endTime = newEvent.value.endDate || ''
+  showShiftForm.value = true
+}
 
 const toggleCategory = (id) => {
   const idx = shiftForm.value.categoryIds.indexOf(id)

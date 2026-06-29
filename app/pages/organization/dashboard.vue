@@ -1,8 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50 flex">
-    <OrganizationMenu />
-
-    <main class="flex-1 p-8 ml-64">
+  <main class="p-8">
       <header class="mb-8">
         <h1 class="text-3xl font-bold text-slate-900">Willkommen!</h1>
         <p class="text-slate-500 mt-1">Hier ist Ihre aktuelle Übersicht über den Helfer-Bedarf</p>
@@ -264,10 +261,9 @@
           </li>
         </ul>
       </div>
-    </main>
+  </main>
 
-    <OrgUserPopup :user-id="activeUserId" @close="activeUserId = null" />
-  </div>
+  <OrgUserPopup :user-id="activeUserId" @close="activeUserId = null" />
 </template>
 
 <script setup>

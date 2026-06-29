@@ -1,8 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50 flex">
-    <OrganizationMenu />
-
-    <main class="flex-1 p-8 ml-64">
+  <main class="p-8">
       <header class="flex justify-between items-center mb-8">
         <div>
           <h1 class="text-3xl font-bold text-slate-900">Dienste</h1>
@@ -182,8 +179,7 @@
           </div>
         </form>
       </AppModal>
-    </main>
-  </div>
+  </main>
 </template>
 
 <script setup>

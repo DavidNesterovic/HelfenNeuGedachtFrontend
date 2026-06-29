@@ -1,8 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50 flex">
-    <OrganizationMenu />
-
-    <main class="flex-1 p-8 ml-64">
+  <main class="p-8">
       <header class="flex justify-between items-center mb-8">
         <div>
           <h1 class="text-3xl font-bold text-slate-900">Veranstaltungen</h1>
@@ -99,49 +96,48 @@
           @delete="deleteEvent"
         />
       </div>
-    </main>
+  </main>
 
-    <!-- Modals -->
-    <OrgEventDetailsModal
-      :model-value="!!selectedEvent"
-      :event="selectedEvent"
-      :api-base="apiBase"
-      @update:model-value="v => { if (!v) selectedEvent = null }"
-      @edit="onEditFromDetails"
-      @publish="publishEvent"
-      @cancel="cancelEvent"
-      @complete="onCompleteFromDetails"
-      @rate="onRateFromDetails"
-    />
+  <!-- Modals -->
+  <OrgEventDetailsModal
+    :model-value="!!selectedEvent"
+    :event="selectedEvent"
+    :api-base="apiBase"
+    @update:model-value="v => { if (!v) selectedEvent = null }"
+    @edit="onEditFromDetails"
+    @publish="publishEvent"
+    @cancel="cancelEvent"
+    @complete="onCompleteFromDetails"
+    @rate="onRateFromDetails"
+  />
 
-    <OrgEventEditModal
-      :model-value="!!editingEvent"
-      :event="editingEvent"
-      :api-base="apiBase"
-      :available-categories="availableCategories"
-      @update:model-value="v => { if (!v) editingEvent = null }"
-      @closed="onEditClosed"
-      @saved="onEditSaved"
-    />
+  <OrgEventEditModal
+    :model-value="!!editingEvent"
+    :event="editingEvent"
+    :api-base="apiBase"
+    :available-categories="availableCategories"
+    @update:model-value="v => { if (!v) editingEvent = null }"
+    @closed="onEditClosed"
+    @saved="onEditSaved"
+  />
 
-    <OrgEventCreateModal
-      v-model="showCreateModal"
-      :api-base="apiBase"
-      :available-categories="availableCategories"
-      @created="loadEvents"
-    />
+  <OrgEventCreateModal
+    v-model="showCreateModal"
+    :api-base="apiBase"
+    :available-categories="availableCategories"
+    @created="loadEvents"
+  />
 
-    <OrgEventCompleteModal
-      v-model="showCompleteModal"
-      :event="completeEvent"
-      @completed="onCompleted"
-    />
+  <OrgEventCompleteModal
+    v-model="showCompleteModal"
+    :event="completeEvent"
+    @completed="onCompleted"
+  />
 
-    <OrgEventRatingModal
-      v-model="showRatingModal"
-      :event="ratingEvent"
-    />
-  </div>
+  <OrgEventRatingModal
+    v-model="showRatingModal"
+    :event="ratingEvent"
+  />
 </template>
 
 <script setup>

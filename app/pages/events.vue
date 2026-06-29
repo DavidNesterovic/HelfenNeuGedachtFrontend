@@ -30,14 +30,14 @@
 
 
         <!-- Kategorien (Slider auf Mobile/Tablet, Liste auf Desktop) -->
-        <div v-if="categories.length > 0" class="bg-white p-1 lg:p-4 lg:rounded-2xl lg:border lg:border-slate-100 lg:shadow-sm">
+        <div v-if="categories.length > 0" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div class="hidden lg:flex items-center justify-between mb-3">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Interessen</h3>
             <span v-if="filters.categories.length > 0" class="text-[11px] bg-indigo-50 text-indigo-600 font-semibold px-1.5 py-0.5 rounded-md">
               {{ filters.categories.length }} aktiv
             </span>
           </div>
-          <div class="flex lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible p-2 lg:pb-0 scrollbar-hide flex-nowrap lg:flex-wrap">
+          <div class="flex lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible scrollbar-hide flex-nowrap lg:flex-wrap p-0.5">
             <FilterChip
               v-for="c in categories"
               :key="c.id"
