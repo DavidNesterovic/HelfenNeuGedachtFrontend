@@ -1,0 +1,40 @@
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/lgiselbrecht/helfenneugedacht.frontend
+  # Eigene Docker-Config, damit der persönliche GHCR-Login auf dem Rechner unberührt bleibt
+  DOCKER_CONFIG: ${{ github.workspace }}/../.docker-config
+
+jobs:
+  build-and-push:
+    runs-on: [self-hosted, windows]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build & Push
+        shell: pwsh
+        env:
+          # Repo-Secret GHCR_PAT (Classic PAT von lgiselbrecht mit write:packages)
+          TOKEN: ${{ secrets.GHCR_PAT }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          $version = "0.0.${{ github.run_number }}"
+
+          $env:TOKEN | docker login ghcr.io -u lgiselbrecht --password-stdin
+          docker build --pull -t "${env:IMAGE}:$version" -t "${env:IMAGE}:latest" .
+          docker push "${env:IMAGE}:$version"
+          docker push "${env:IMAGE}:latest"
+          docker logout ghcr.io
+
+          docker image rm "${env:IMAGE}:$version"
+          docker image prune -f
+          "Gepusht: ${env:IMAGE}:$version" >> $env:GITHUB_STEP_SUMMARY
