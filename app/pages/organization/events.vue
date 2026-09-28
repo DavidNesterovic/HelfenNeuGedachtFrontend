@@ -96,7 +96,6 @@
           @delete="deleteEvent"
         />
       </div>
-  </main>
 
   <!-- Modals -->
   <OrgEventDetailsModal
@@ -138,6 +137,7 @@
     v-model="showRatingModal"
     :event="ratingEvent"
   />
+  </main>
 </template>
 
 <script setup>

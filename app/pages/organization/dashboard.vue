@@ -261,9 +261,9 @@
           </li>
         </ul>
       </div>
-  </main>
 
   <OrgUserPopup :user-id="activeUserId" @close="activeUserId = null" />
+  </main>
 </template>
 
 <script setup>
