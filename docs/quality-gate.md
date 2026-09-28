@@ -37,6 +37,12 @@ Run the checks locally with `npm run lint`, `npm run typecheck` and `npm run lic
 - **Weak copyleft (MPL-2.0 etc.)** only applies to the licensed files themselves. It is fine to use unmodified packages, but a human should look at them once. Today this is `lightningcss` (MPL-2.0, a build tool) and `only` (`MIT*`, a license text the tool can't detect).
 - **Semgrep WARNING/INFO** has a higher false-positive rate. A developer should review these findings, not the pipeline.
 
+## Examples: what the gate caught on its first runs
+
+- **Semgrep (blocking):** the container ran as `root` (`dockerfile.security.missing-user`). Fix: `USER node` in the Dockerfile.
+- **Trivy (blocking):** 4 fixable HIGH CVEs (`tar`, `brace-expansion`, `ip-address`). They were not in our dependencies but in the npm CLI that ships with the `node:24-alpine` base image. The production container never runs npm, so we delete npm, npx, corepack and yarn from the final stage. That removes the finding and leaves less in the image to attack.
+- **`npm ci` (blocking):** a lockfile generated on Windows was missing Linux-only optional dependencies (npm bug npm/cli#4828). Fix: regenerate the lockfile. The old Dockerfile used `npm install` as a fallback, which silently ignored the lockfile and hid this problem.
+
 ## Changing a threshold
 
 - ESLint: change the rule severity in `eslint.config.mjs` (`'error'` or `'warn'`).
