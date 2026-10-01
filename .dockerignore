@@ -1,0 +1,17 @@
+node_modules
+.output
+.nuxt
+.nitro
+.cache
+dist
+.data
+.git
+.gitignore
+.fleet
+.idea
+.DS_Store
+*.log
+logs
+.env
+.env.*
+README.md

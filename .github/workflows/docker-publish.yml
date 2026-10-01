@@ -1,0 +1,51 @@
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/lgiselbrecht/helfenneugedacht.frontend
+
+jobs:
+  quality-gate:
+    uses: ./.github/workflows/quality-gate.yml
+
+  build-and-push:
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: |
+          VERSION="0.0.${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          docker build --pull -t "$IMAGE:$VERSION" -t "$IMAGE:latest" .
+
+      # Image-Scan (Base-Image + OS-Pakete). Nur behebbare Lücken blockieren,
+      # sonst wäre die Pipeline wegen Upstream-CVEs ohne Fix dauerhaft rot.
+      - name: Trivy – alle Findings (nur Warnung)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.65.0 \
+            image --severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 "$IMAGE:$VERSION"
+
+      - name: Trivy – HIGH/CRITICAL mit Fix (blockierend)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.65.0 \
+            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE:$VERSION"
+
+      - name: Push
+        env:
+          # Repo-Secret GHCR_PAT (Classic PAT von lgiselbrecht mit write:packages)
+          TOKEN: ${{ secrets.GHCR_PAT }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u lgiselbrecht --password-stdin
+          docker push "$IMAGE:$VERSION"
+          docker push "$IMAGE:latest"
+
+          echo "Gepusht: $IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,99 @@
+name: Quality Gate
+
+# Läuft bei jedem Pull Request und wird zusätzlich von docker-publish.yml
+# vor dem Build & Push aufgerufen. Schlägt ein Job fehl, wird nichts deployed.
+#
+# BLOCKIEREND (Exit-Code != 0):
+#   - ESLint-Errors, TypeScript-Fehler
+#   - Semgrep-Findings mit Severity ERROR
+#   - npm audit: HIGH/CRITICAL in Produktions-Dependencies
+#   - Secrets im Git-Verlauf (gitleaks)
+#   - Starkes Copyleft (GPL/AGPL/SSPL/...) in Produktions-Dependencies
+# NUR WARNUNG (Annotation, Pipeline läuft weiter):
+#   - ESLint-Warnings, Semgrep WARNING/INFO
+#   - npm audit: LOW/MODERATE bzw. Findings in devDependencies
+#   - Schwaches Copyleft (MPL/LGPL/EPL) oder unbekannte Lizenzen
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-analysis:
+    name: Static Code Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: ESLint (Errors blockieren, Warnings nicht)
+        run: npx eslint . --format stylish
+
+      - name: TypeScript Typecheck
+        run: npx nuxt typecheck
+
+  sast:
+    name: Security – SAST (Semgrep)
+    runs-on: ubuntu-latest
+    container: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Semgrep – alle Findings (nur Warnung)
+        run: semgrep scan --config p/javascript --config p/typescript --config p/owasp-top-ten --metrics=off
+
+      - name: Semgrep – ERROR-Findings (blockierend)
+        run: semgrep scan --config p/javascript --config p/typescript --config p/owasp-top-ten --metrics=off --severity ERROR --error
+
+  dependencies:
+    name: Security – Dependencies (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Alle Schwachstellen inkl. devDependencies (nur Warnung)
+        run: |
+          npm audit --package-lock-only --audit-level=low \
+            || echo "::warning title=npm audit::Schwachstellen gefunden (Details im Log) – nicht blockierend"
+
+      - name: HIGH/CRITICAL in Produktions-Dependencies (blockierend)
+        run: npm audit --package-lock-only --omit=dev --audit-level=high
+
+  secrets:
+    name: Security – Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # kompletter Verlauf, auch gelöschte Secrets zählen
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 \
+            git /repo --redact --verbose --exit-code 1
+
+  licenses:
+    name: License Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run license:check

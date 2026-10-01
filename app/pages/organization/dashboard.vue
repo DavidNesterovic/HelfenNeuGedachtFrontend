@@ -1,0 +1,490 @@
+<template>
+  <main class="p-8">
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">Willkommen!</h1>
+        <p class="text-slate-500 mt-1">Hier ist Ihre aktuelle Übersicht über den Helfer-Bedarf</p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 transition-transform hover:scale-[1.02]">
+          <div class="p-4 bg-blue-100 text-blue-600 rounded-xl">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wider">Aktive Veranstaltungen</p>
+            <p class="text-3xl font-black text-slate-900">{{ eventsCount }}</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 transition-transform hover:scale-[1.02]">
+          <div class="p-4 bg-emerald-100 text-emerald-600 rounded-xl">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wider">Offene Dienste</p>
+            <p class="text-3xl font-black text-slate-900">{{ shiftsCount }}</p>
+          </div>
+        </div>
+
+        <div
+          class="p-6 rounded-xl shadow-sm border flex items-center gap-4 transition-transform hover:scale-[1.02]"
+          :class="pendingParticipations.length > 0
+            ? 'bg-orange-50 border-orange-200'
+            : 'bg-white border-slate-100'"
+        >
+          <div class="p-4 rounded-xl" :class="pendingParticipations.length > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold uppercase tracking-wider" :class="pendingParticipations.length > 0 ? 'text-orange-600' : 'text-slate-500'">Offene Bestätigungen</p>
+            <div class="flex items-center gap-2">
+              <p class="text-3xl font-black" :class="pendingParticipations.length > 0 ? 'text-orange-700' : 'text-slate-900'">{{ pendingParticipations.length }}</p>
+              <span v-if="pendingParticipations.length > 0" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white animate-pulse">
+                Aktion nötig
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Offene Bestätigungen -->
+      <div v-if="pendingParticipations.length > 0" class="bg-white p-6 rounded-xl shadow-sm border border-orange-200 mb-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="p-2 bg-orange-100 rounded-lg">
+            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">Offene Bestätigungen</h3>
+          <span class="text-sm font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">
+            {{ pendingParticipations.length }} wartend
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          <div
+            v-for="p in pendingParticipations"
+            :key="`${p.userId}-${p.shiftId}`"
+            class="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-orange-200 bg-slate-50 hover:bg-orange-50/30 transition-all group"
+          >
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div @click="activeUserId = p.userId" class="w-10 h-10 bg-orange-100 text-orange-600 flex items-center justify-center rounded-full shrink-0 font-bold text-sm cursor-pointer hover:bg-orange-200 transition-colors" title="Profil anzeigen">
+                {{ getInitials(p.userName) }}
+              </div>
+              <div class="min-w-0">
+                <div @click="activeUserId = p.userId" class="font-bold text-slate-900 truncate cursor-pointer hover:text-blue-600 hover:underline transition-colors duration-150" title="Profil anzeigen">{{ p.userName }}</div>
+                <div class="text-sm text-slate-500 truncate">
+                  <span class="font-medium text-slate-700">{{ p.shiftName }}</span>
+                  <span class="mx-1.5 text-slate-300">·</span>
+                  <span>{{ p.eventTitle }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 ml-4">
+              <button
+                @click="confirmParticipation(p)"
+                :disabled="p._updating"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl transition-all bg-blue-100 text-blue-700 hover:bg-blue-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg v-if="p._updating && p._action === 'confirm'" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Bestätigen
+              </button>
+              <button
+                @click="rejectParticipation(p)"
+                :disabled="p._updating"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl transition-all bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg v-if="p._updating && p._action === 'reject'" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Ablehnen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alles erledigt -->
+      <div v-else-if="!isLoading" class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mb-8">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-emerald-100 rounded-lg">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Keine offenen Bestätigungen</h3>
+            <p class="text-sm text-slate-500">Alle Helfer-Anfragen wurden bearbeitet.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <Transition
+        enter-active-class="transition ease-out duration-300"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition ease-in duration-200"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-2"
+      >
+        <div v-if="toast.show" class="fixed bottom-6 right-6 z-50 max-w-sm w-full">
+          <div
+            :class="[
+              'flex items-start gap-3 p-4 rounded-xl shadow-lg border',
+              toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : toast.type === 'info' ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-800'
+            ]"
+          >
+            <svg v-if="toast.type === 'success'" class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg v-else-if="toast.type === 'info'" class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg v-else class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-sm font-medium">{{ toast.message }}</p>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Events zum Abschließen -->
+      <div v-if="eventsToComplete.length > 0" class="bg-white p-6 rounded-xl shadow-sm border border-purple-200 mb-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="p-2 bg-purple-100 rounded-lg">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">Veranstaltungen abschließen</h3>
+          <span class="text-sm font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+            {{ eventsToComplete.length }} offen
+          </span>
+        </div>
+        <p class="text-sm text-slate-500 mb-4">Diese vergangenen Veranstaltungen sollten abgeschlossen oder abgesagt werden.</p>
+        <div class="space-y-3">
+          <div v-for="event in eventsToComplete" :key="event.id"
+            class="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-purple-200 bg-slate-50 hover:bg-purple-50/30 transition-all">
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-slate-900 truncate">{{ event.title }}</div>
+              <div class="text-sm text-slate-500">
+                {{ event.startDate ? new Date(event.startDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Kein Datum' }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 ml-4">
+              <button
+                @click="openCompleteModal(event)"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl transition-all bg-purple-100 text-purple-700 hover:bg-purple-200"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Abschließen
+              </button>
+              <NuxtLink :to="`/organization/events?id=${event.id}`" class="text-blue-600 text-sm font-semibold hover:underline">
+                Details
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nächste Veranstaltungen -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+        <h3 class="text-xl font-bold mb-4 text-slate-800">Meine Nächsten Veranstaltungen</h3>
+
+        <AppSpinner v-if="isLoading" text="" padding="sm" />
+
+        <ul v-else class="divide-y divide-slate-100">
+          <li v-for="event in upcomingEvents" :key="event.id" class="py-4 flex justify-between items-center group">
+            <div>
+              <div class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{{ event.title }}</div>
+              <div class="text-sm text-slate-500">
+                {{ event.startDate ? new Date(event.startDate).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Kein Datum' }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                @click="pushEvent(event)"
+                :disabled="pushingEventId === event.id || pushingInterestedEventId === event.id"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all bg-orange-100 text-orange-700 hover:bg-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="E-Mail an alle registrierten Helfer senden"
+              >
+                <svg v-if="pushingEventId === event.id" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+                {{ pushingEventId === event.id ? 'Wird gesendet…' : 'Alle benachrichtigen' }}
+              </button>
+              <button
+                @click="pushEventInterested(event)"
+                :disabled="pushingInterestedEventId === event.id || pushingEventId === event.id"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-xl transition-all bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="E-Mail nur an interessierte/bestätigte Helfer senden"
+              >
+                <svg v-if="pushingInterestedEventId === event.id" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                {{ pushingInterestedEventId === event.id ? 'Wird gesendet…' : 'Nur Interessierte' }}
+              </button>
+              <NuxtLink :to="`/organization/events?id=${event.id}`" class="text-blue-600 text-sm font-semibold hover:underline">
+                Details
+              </NuxtLink>
+            </div>
+          </li>
+          <li v-if="upcomingEvents.length === 0" class="py-4 text-slate-400 italic text-center">
+            Keine Veranstaltungen gefunden.
+          </li>
+        </ul>
+      </div>
+
+  <OrgUserPopup :user-id="activeUserId" @close="activeUserId = null" />
+  </main>
+</template>
+
+<script setup>
+import { getAuthHeader, getToken, getUserInfo } from '../../assets/utils/auth'
+import { useEventStatus } from '~/composables/useEventStatus'
+
+definePageMeta({ middleware: 'auth' })
+
+const { confirm: showDialogConfirm } = useDialog()
+const config = useRuntimeConfig()
+const { normalizeStatus } = useEventStatus()
+
+const eventsCount = ref(0)
+const shiftsCount = ref(0)
+const upcomingEvents = ref([])
+const pendingParticipations = ref([])
+const isLoading = ref(true)
+const allEvents = ref([])
+const activeUserId = ref(null)
+
+const eventsToComplete = computed(() => {
+  const now = new Date()
+  return allEvents.value.filter(e => {
+    const end = e.endDate ? new Date(e.endDate) : (e.startDate ? new Date(e.startDate) : null)
+    if (!end || end >= now) return false
+    const status = normalizeStatus(e.eventStatus !== undefined ? e.eventStatus : e.status)
+    return status === 0 || status === 1
+  })
+})
+
+const openCompleteModal = () => {
+  navigateTo('/organization/events')
+}
+
+const pushingEventId = ref(null)
+const pushingInterestedEventId = ref(null)
+const toast = reactive({ show: false, message: '', type: 'success' })
+let toastTimer = null
+
+const showToast = (message, type = 'success') => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.show = true
+  toast.message = message
+  toast.type = type
+  toastTimer = setTimeout(() => { toast.show = false }, 5000)
+}
+
+const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
+}
+
+const confirmParticipation = async (participation) => {
+  participation._updating = true
+  participation._action = 'confirm'
+  try {
+    await $fetch(
+      `${config.public.apiBase}/Participation/status?userId=${participation.userId}&shiftId=${participation.shiftId}&status=1`,
+      { method: 'PUT', headers: { Authorization: getAuthHeader() } }
+    )
+    pendingParticipations.value = pendingParticipations.value.filter(
+      p => !(p.userId === participation.userId && p.shiftId === participation.shiftId)
+    )
+    showToast(`${participation.userName} wurde für „${participation.shiftName}" bestätigt.`, 'success')
+  } catch (error) {
+    console.error('Fehler beim Bestätigen:', error)
+    showToast('Fehler beim Bestätigen. Bitte versuchen Sie es erneut.', 'error')
+  } finally {
+    participation._updating = false
+    participation._action = null
+  }
+}
+
+const rejectParticipation = async (participation) => {
+  participation._updating = true
+  participation._action = 'reject'
+  try {
+    await $fetch(
+      `${config.public.apiBase}/Participation/status?userId=${participation.userId}&shiftId=${participation.shiftId}&status=3`,
+      { method: 'PUT', headers: { Authorization: getAuthHeader() } }
+    )
+    pendingParticipations.value = pendingParticipations.value.filter(
+      p => !(p.userId === participation.userId && p.shiftId === participation.shiftId)
+    )
+    showToast(`${participation.userName} wurde für „${participation.shiftName}" abgelehnt.`, 'info')
+  } catch (error) {
+    console.error('Fehler beim Ablehnen:', error)
+    showToast('Fehler beim Ablehnen. Bitte versuchen Sie es erneut.', 'error')
+  } finally {
+    participation._updating = false
+    participation._action = null
+  }
+}
+
+const pushEvent = async (event) => {
+  const confirmed = await showDialogConfirm(
+    `Möchten Sie die Veranstaltung „${event.title}" wirklich an alle Helfer per E-Mail bewerben?\n\nDies sendet eine E-Mail an alle registrierten Nutzer.`
+  )
+  if (!confirmed) return
+
+  pushingEventId.value = event.id
+
+  try {
+    const result = await $fetch(`${config.public.apiBase}/email/push-event/${event.id}`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
+      body: { eventLink: `${window.location.origin}/events` }
+    })
+    showToast(`E-Mail erfolgreich an ${result.successCount}/${result.totalRecipients} Helfer gesendet!`, 'success')
+  } catch (error) {
+    console.error('Fehler beim Bewerben der Veranstaltung:', error)
+    showToast('Beim Versenden der E-Mails ist ein Fehler aufgetreten.', 'error')
+  } finally {
+    pushingEventId.value = null
+  }
+}
+
+const pushEventInterested = async (event) => {
+  const confirmed = await showDialogConfirm(
+    `Möchten Sie die Veranstaltung „${event.title}" nur an interessierte/bestätigte Helfer per E-Mail senden?`
+  )
+  if (!confirmed) return
+
+  pushingInterestedEventId.value = event.id
+
+  try {
+    const result = await $fetch(`${config.public.apiBase}/email/push-event/${event.id}`, {
+      method: 'POST',
+      headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
+      body: { eventLink: `${window.location.origin}/events`, onlyInterested: true }
+    })
+    if (result.totalRecipients === 0) {
+      showToast('Keine interessierten Helfer gefunden. Keine E-Mails versendet.', 'info')
+    } else {
+      showToast(`E-Mail erfolgreich an ${result.successCount}/${result.totalRecipients} interessierte Helfer gesendet!`, 'success')
+    }
+  } catch (error) {
+    console.error('Fehler beim Senden an interessierte Helfer:', error)
+    showToast('Beim Versenden der E-Mails ist ein Fehler aufgetreten.', 'error')
+  } finally {
+    pushingInterestedEventId.value = null
+  }
+}
+
+let connection = null
+
+const loadDashboardData = async () => {
+  if (!process.client) return
+
+  const userInfo = getUserInfo()
+  try {
+    const headers = { Authorization: getAuthHeader() }
+    const [eventsRes, shiftsRes, pendingRes] = await Promise.all([
+      $fetch(`${config.public.apiBase}/events/organization/${userInfo.OrganizationId}`, { headers }),
+      $fetch(`${config.public.apiBase}/shifts`, { headers }),
+      $fetch(`${config.public.apiBase}/participation/pending/${userInfo.OrganizationId}`, { headers })
+    ])
+
+    eventsCount.value = eventsRes.length
+    shiftsCount.value = shiftsRes.length
+    pendingParticipations.value = (pendingRes || []).map(p => ({ ...p, _updating: false, _action: null }))
+    allEvents.value = eventsRes
+    upcomingEvents.value = eventsRes
+      .filter(e => e.startDate)
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+      .slice(0, 3)
+  } catch (error) {
+    console.error('Fehler beim Laden der Dashboard-Daten:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const initSignalR = async () => {
+  if (!process.client) return
+
+  const config = useRuntimeConfig()
+  const signalR = await import('@microsoft/signalr')
+  const baseHubUrl = config.public.hubBase
+
+  if (!baseHubUrl || baseHubUrl.includes('undefined')) {
+    console.error('KRITISCH: Hub URL ist nicht geladen!', config.public)
+    return
+  }
+
+  const rawToken = getToken()
+  const cleanToken = rawToken ? rawToken.replace(/"/g, '') : ''
+
+  try {
+    connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${baseHubUrl}/dashboard`, {
+        accessTokenFactory: () => cleanToken,
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSockets
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Information)
+      .build()
+
+    connection.on('dashboardUpdated', () => {
+      loadDashboardData()
+    })
+
+    await connection.start()
+  } catch (err) {
+    console.error('SignalR Start Fehler:', err)
+  }
+}
+
+onMounted(() => {
+  loadDashboardData()
+  initSignalR()
+})
+
+onUnmounted(() => {
+  if (connection) {
+    connection.stop()
+  }
+})
+</script>
