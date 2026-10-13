@@ -38,6 +38,11 @@ The workflow rejects tags that don't match `vX.Y.Z` / `vX.Y.Z-suffix`, and tags 
    git tag -a v0.2.0 -m "v0.2.0"
    git push origin v0.2.0
    ```
+   Optionally, give the release a name and an introduction through the tag message. The first line extends the title, and the rest (Markdown) goes above the generated notes:
+   ```bash
+   git tag -a v0.2.0 --cleanup=whitespace -F release-intro.txt   # first line e.g. "Shift Swapping"
+   ```
+   `--cleanup=whitespace` is needed for Markdown headings, because git otherwise drops lines starting with `#` as comments. The result is the release "v0.2.0 – Shift Swapping". For the very first release, the full commit list is collapsed below the introduction.
 4. Watch the **Build & Release** run in GitHub Actions. When it is green, the release is on the Releases page and the image is on GHCR.
 
 ## When something goes wrong
