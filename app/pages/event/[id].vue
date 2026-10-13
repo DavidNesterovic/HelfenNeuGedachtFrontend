@@ -147,7 +147,8 @@ definePageMeta({
 
 const route = useRoute()
 const config = useRuntimeConfig()
-const eventId = route.params.id
+const { refresh: refreshCounts } = useParticipationCounts()
+const { show: showSnack } = useSnackbar()
 
 const pending = ref(true)
 const error = ref(false)
@@ -253,16 +254,24 @@ const toggleShiftInterest = async (shiftId) => {
   submittingShiftIds.add(shiftId)
 
   try {
-    await $fetch(`${config.public.apiBase}/Participation`, {
-      method: 'POST',
-      headers: { Authorization: getAuthHeader() },
-      params: {
-        shiftId,
-        status: 0,
-      },
-    })
+    if (wasInterested) {
+      await $fetch(`${config.public.apiBase}/Participation`, {
+        method: 'DELETE',
+        headers: { Authorization: getAuthHeader() },
+        params: { shiftId },
+      })
+    } else {
+      await $fetch(`${config.public.apiBase}/Participation`, {
+        method: 'POST',
+        headers: { Authorization: getAuthHeader() },
+        params: { shiftId, status: 0 },
+      })
+      showSnack('Vorgemerkt', { type: 'success' })
+    }
+    refreshCounts()
   } catch (e) {
     console.error('Participation request failed:', e)
+    showSnack('Aktion fehlgeschlagen. Bitte erneut versuchen.', { type: 'error' })
     // Revert on error
     if (wasInterested) {
       interestedShiftIds.value.add(shiftId)
@@ -275,8 +284,11 @@ const toggleShiftInterest = async (shiftId) => {
 }
 
 const loadEventData = async () => {
+  // Bei jedem Laden aktuell lesen, damit Navigation /event/1 -> /event/2 funktioniert
+  const eventId = route.params.id
   pending.value = true
   error.value = false
+  organizationName.value = ''
   try {
     const [eventRes, participationsRes] = await Promise.all([
       $fetch(`${config.public.apiBase}/events/${eventId}`, {
@@ -338,4 +350,5 @@ const loadEventData = async () => {
 }
 
 onMounted(loadEventData)
+watch(() => route.params.id, (id, oldId) => { if (id && id !== oldId) loadEventData() })
 </script>

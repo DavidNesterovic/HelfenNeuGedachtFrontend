@@ -280,9 +280,20 @@ const loadCategories = async () => {
   } catch { /* ignore */ }
 }
 
-onMounted(() => {
-  loadEvents()
+// Deep-Links vom Dashboard: ?id=<eventId> öffnet Details, ?complete=<eventId> den Abschluss-Dialog
+const route = useRoute()
+const openFromQuery = () => {
+  const findEvent = (id) => events.value.find(e => e.id === Number(id))
+  const toComplete = route.query.complete && findEvent(route.query.complete)
+  const toShow = route.query.id && findEvent(route.query.id)
+  if (toComplete) openCompleteModal(toComplete)
+  else if (toShow) openDetails(toShow)
+}
+
+onMounted(async () => {
   loadCategories()
+  await loadEvents()
+  openFromQuery()
 })
 
 // --- Modal handlers ---
@@ -348,12 +359,24 @@ const onCompleted = async (event) => {
 
 // --- Event actions ---
 
+// Nur die Felder senden, die die API erwartet (keine angereicherten shifts/helperList)
+const eventPayload = (event, eventStatus) => ({
+  id: event.id,
+  title: event.title,
+  description: event.description,
+  location: event.location,
+  startDate: event.startDate,
+  endDate: event.endDate,
+  organizationId: event.organizationId,
+  eventStatus,
+})
+
 const publishEvent = async (event) => {
   if (!await showDialogConfirm(`Veranstaltung „${event.title}" veröffentlichen?`)) return
   try {
     await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
       method: 'PUT',
-      body: JSON.stringify({ ...event, eventStatus: 1 }),
+      body: JSON.stringify(eventPayload(event, 1)),
     })
     if (selectedEvent.value?.id === event.id) selectedEvent.value = null
     await loadEvents()
@@ -367,7 +390,7 @@ const cancelEvent = async (event) => {
   try {
     await authenticatedFetch(`${config.public.apiBase}/events/${event.id}`, {
       method: 'PUT',
-      body: JSON.stringify({ ...event, eventStatus: 3 }),
+      body: JSON.stringify(eventPayload(event, 3)),
     })
     if (selectedEvent.value?.id === event.id) selectedEvent.value = null
     await loadEvents()

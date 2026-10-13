@@ -22,6 +22,9 @@
 
       <AppSpinner v-if="loadingShifts" text="Lade Dienste..." padding="sm" />
 
+      <AppAlert v-else-if="loadError" type="error"
+        message="Die Helfer:innen konnten nicht geladen werden. Bitte schließen Sie den Dialog und versuchen Sie es erneut." />
+
       <template v-else>
         <div v-for="shift in shifts" :key="shift.id" class="space-y-2">
           <h4 class="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
@@ -46,7 +49,7 @@
     </div>
 
     <template #footer-content>
-      <AppButton variant="purple" class="flex-1" size="lg" :loading="completing" :disabled="completing" @click="execute">
+      <AppButton variant="purple" class="flex-1" size="lg" :loading="completing" :disabled="completing || loadingShifts || loadError" @click="execute">
         {{ completing ? 'Wird abgeschlossen...' : `Event abschließen (${attendedUserIds.length} anwesend)` }}
       </AppButton>
       <AppButton variant="secondary" size="lg" @click="$emit('update:modelValue', false)">Abbrechen</AppButton>
@@ -72,12 +75,14 @@ const { getConfirmedHelpers, formatDate } = useEventStatus()
 const shifts = ref([])
 const attendedUserIds = ref([])
 const loadingShifts = ref(false)
+const loadError = ref(false)
 const completing = ref(false)
 
 watch(() => props.modelValue, async (open) => {
   if (!open || !props.event) return
   attendedUserIds.value = []
   shifts.value = []
+  loadError.value = false
   loadingShifts.value = true
   try {
     const data = await $fetch(`${config.public.apiBase}/events/${props.event.id}`, {
@@ -85,18 +90,18 @@ watch(() => props.modelValue, async (open) => {
       headers: { Authorization: getAuthHeader() },
     })
     const raw = data.shifts || data.Shifts || []
-    for (const shift of raw) {
-      try {
-        shift.helperList = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
-          headers: { Authorization: getAuthHeader() },
-        })
-      } catch { shift.helperList = [] }
-    }
+    // Fehlt eine Helferliste, würden diese Helfer beim Abschluss keine Punkte bekommen -> Fehler nicht schlucken
+    await Promise.all(raw.map(async (shift) => {
+      shift.helperList = await $fetch(`${config.public.apiBase}/participation/shift/${shift.id}`, {
+        headers: { Authorization: getAuthHeader() },
+      })
+    }))
     shifts.value = raw
     const allConfirmed = raw.flatMap(s => getConfirmedHelpers(s).map(h => h.userId))
     attendedUserIds.value = [...new Set(allConfirmed)]
   } catch (e) {
     console.error('Fehler beim Laden der Abschluss-Daten:', e)
+    loadError.value = true
   } finally {
     loadingShifts.value = false
   }

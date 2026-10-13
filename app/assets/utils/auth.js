@@ -114,18 +114,20 @@ export const authenticatedFetch = async (url, options = {}) => {
         options.headers['Content-Type'] = 'application/json';
     }
 
-    try {
-        // Nuxt bietet $fetch, wir können aber bei nativem fetch bleiben
-        const response = await fetch(url, options);
+    // Nuxt bietet $fetch, wir können aber bei nativem fetch bleiben
+    const response = await fetch(url, options);
 
-        if (response.status === 401) {
-            logout();
-            return null;
-        }
+    if (response.status === 401) {
+        logout();
+    }
 
-        return response;
-    } catch (error) {
-        console.error('Fetch error:', error);
+    // Wie $fetch bei HTTP-Fehlern werfen, damit die catch-Blöcke der Aufrufer greifen
+    if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}`);
+        error.status = response.status;
+        error.data = await response.json().catch(() => null);
         throw error;
     }
+
+    return response;
 };

@@ -157,7 +157,11 @@ const shiftForm = ref({ id: null, name: '', description: '', requiredHelpers: 1,
 const shiftImageFile = ref(null)
 const creating = ref(false)
 
-const minDateTime = computed(() => new Date().toISOString().slice(0, 16))
+// datetime-local erwartet lokale Zeit, toISOString() allein wäre UTC
+const minDateTime = computed(() => {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 16)
+})
 
 const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[d] ?? 'Einfach')
 const shiftRatePerHour = (d) => ({ 0: 10, 1: 20, 2: 30 }[d] ?? 10)

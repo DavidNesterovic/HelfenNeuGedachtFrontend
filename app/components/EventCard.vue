@@ -234,12 +234,16 @@ const organizationLabel = computed(() => {
   return name || `Organisation #${id}`
 })
 
-const helperLabel = computed(() =>
-  `${props.event.requiredHelpers} Helfer gesucht`
-)
+const helperLabel = computed(() => {
+  const required = props.event.requiredHelpers
+    || (props.event.shifts ?? []).reduce((sum, s) => sum + (s.requiredHelpers ?? 0), 0)
+  return `${required} Helfer gesucht`
+})
 
 const formattedDate = computed(() => {
+  // Intl.format wirft bei ungültigem Datum einen RangeError und würde die ganze Liste crashen
   const date = new Date(props.event.startDate)
+  if (!props.event.startDate || Number.isNaN(date.getTime())) return ''
   return new Intl.DateTimeFormat('de-AT', {
     weekday: 'short',
     day: '2-digit',

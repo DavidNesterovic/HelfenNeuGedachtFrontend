@@ -294,8 +294,8 @@ const eventsToComplete = computed(() => {
   })
 })
 
-const openCompleteModal = () => {
-  navigateTo('/organization/events')
+const openCompleteModal = (event) => {
+  navigateTo({ path: '/organization/events', query: { complete: event.id } })
 }
 
 const pushingEventId = ref(null)
@@ -413,6 +413,7 @@ const pushEventInterested = async (event) => {
 }
 
 let connection = null
+let unmounted = false
 
 const loadDashboardData = async () => {
   if (!process.client) return
@@ -426,11 +427,21 @@ const loadDashboardData = async () => {
       $fetch(`${config.public.apiBase}/participation/pending/${userInfo.OrganizationId}`, { headers })
     ])
 
-    eventsCount.value = eventsRes.length
-    shiftsCount.value = shiftsRes.length
+    // Aktiv = Entwurf/Veröffentlicht und noch nicht vorbei
+    const now = new Date()
+    const activeEvents = eventsRes.filter(e => {
+      const status = normalizeStatus(e.eventStatus)
+      const end = e.endDate || e.startDate
+      return (status === 0 || status === 1) && (!end || new Date(end) >= now)
+    })
+    // /shifts liefert alle Dienste -> auf die aktiven Events dieser Organisation einschränken
+    const activeEventIds = new Set(activeEvents.map(e => e.id))
+
+    eventsCount.value = activeEvents.length
+    shiftsCount.value = shiftsRes.filter(s => activeEventIds.has(s.eventId)).length
     pendingParticipations.value = (pendingRes || []).map(p => ({ ...p, _updating: false, _action: null }))
     allEvents.value = eventsRes
-    upcomingEvents.value = eventsRes
+    upcomingEvents.value = activeEvents
       .filter(e => e.startDate)
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
       .slice(0, 3)
@@ -446,6 +457,8 @@ const initSignalR = async () => {
 
   const config = useRuntimeConfig()
   const signalR = await import('@microsoft/signalr')
+  // Seite wurde während des Imports verlassen -> keine Verbindung mehr aufbauen
+  if (unmounted) return
   const baseHubUrl = config.public.hubBase
 
   if (!baseHubUrl || baseHubUrl.includes('undefined')) {
@@ -453,13 +466,11 @@ const initSignalR = async () => {
     return
   }
 
-  const rawToken = getToken()
-  const cleanToken = rawToken ? rawToken.replace(/"/g, '') : ''
-
   try {
     connection = new signalR.HubConnectionBuilder()
       .withUrl(`${baseHubUrl}/dashboard`, {
-        accessTokenFactory: () => cleanToken,
+        // Bei jedem (Re-)Connect den aktuellen Token lesen
+        accessTokenFactory: () => (getToken() || '').replace(/"/g, ''),
         skipNegotiation: false,
         transport: signalR.HttpTransportType.WebSockets
       })
@@ -483,6 +494,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  unmounted = true
   if (connection) {
     connection.stop()
   }

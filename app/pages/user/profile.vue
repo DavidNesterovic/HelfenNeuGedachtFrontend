@@ -154,20 +154,22 @@ const formattedDateOfBirth = computed(() => {
   return date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })
 })
 
+// Backend enum: Interested=0, Confirmed=1, Completed=2, Canceled=3, Applied=4
 const completedParticipations = computed(() =>
-  participations.value.filter(p => p.status === 'Completed')
+  participations.value.filter(p => p.status === 2)
 )
 
 const totalEinsaetze = computed(() => userMe.value?.completedParticipations ?? completedParticipations.value.length)
 
 const totalPunkte = computed(() =>
-  userMe.value?.points ?? completedParticipations.value.reduce((sum, p) => sum + (p.shift?.points ?? 0), 0)
+  userMe.value?.points ?? completedParticipations.value.reduce((sum, p) => sum + (p.shiftPoints ?? 0), 0)
 )
 
+// Participation-DTO ist flach (siehe interested.vue / my-events.vue)
 const totalStunden = computed(() => {
   const hrs = completedParticipations.value.reduce((sum, p) => {
-    const start = new Date(p.shift?.event?.startDate).getTime()
-    const end = new Date(p.shift?.event?.endDate).getTime()
+    const start = new Date(p.shiftStartTime ?? p.eventStartDate).getTime()
+    const end = new Date(p.shiftEndTime ?? p.eventEndDate).getTime()
     if (isNaN(start) || isNaN(end) || end <= start) return sum
     return sum + (end - start) / (1000 * 60 * 60)
   }, 0)

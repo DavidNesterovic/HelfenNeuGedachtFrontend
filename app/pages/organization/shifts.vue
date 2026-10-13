@@ -173,7 +173,7 @@
           </div>
 
           <div class="flex gap-3 pt-2">
-            <AppButton type="submit" class="flex-1">Speichern</AppButton>
+            <AppButton type="submit" class="flex-1" :loading="isSubmitting">Speichern</AppButton>
             <AppButton v-if="isEditModalOpen" type="button" variant="danger" @click="deleteShift(shiftForm.id)">Löschen</AppButton>
             <AppButton type="button" variant="secondary" @click="isCreateModalOpen = false; isEditModalOpen = false">Abbrechen</AppButton>
           </div>
@@ -279,8 +279,13 @@ const toggleShiftCategory = (id) => {
 const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[d] ?? 'Einfach')
 const shiftRatePerHour = (d) => ({ 0: 10, 1: 20, 2: 30 }[d] ?? 10)
 
+// AppField-Select liefert bei leerem Startwert Strings -> für den Vergleich in Number umwandeln
+const selectedFormEvent = computed(() =>
+  events.value.find(e => e.id === Number(shiftForm.value.eventId)) ?? null
+)
+
 const selectedEventDates = computed(() => {
-  const ev = events.value.find(e => e.id === shiftForm.value.eventId)
+  const ev = selectedFormEvent.value
   return ev ? { start: ev.startDate, end: ev.endDate } : null
 })
 
@@ -375,20 +380,19 @@ const saveShift = async (isEdit = false) => {
       return
     }
   }
-  if (shiftForm.value.eventId) {
-    const ev = events.value.find(e => e.id === shiftForm.value.eventId)
-    if (ev) {
-      if (shiftForm.value.startTime && ev.startDate && new Date(shiftForm.value.startTime) < new Date(ev.startDate)) {
-        await showDialogAlert('Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.')
-        return
-      }
-      if (shiftForm.value.endTime && ev.endDate && new Date(shiftForm.value.endTime) > new Date(ev.endDate)) {
-        await showDialogAlert('Das Schichtende darf nicht nach dem Veranstaltungsende liegen.')
-        return
-      }
+  const ev = selectedFormEvent.value
+  if (ev) {
+    if (shiftForm.value.startTime && ev.startDate && new Date(shiftForm.value.startTime) < new Date(ev.startDate)) {
+      await showDialogAlert('Der Schichtstart darf nicht vor dem Veranstaltungsbeginn liegen.')
+      return
+    }
+    if (shiftForm.value.endTime && ev.endDate && new Date(shiftForm.value.endTime) > new Date(ev.endDate)) {
+      await showDialogAlert('Das Schichtende darf nicht nach dem Veranstaltungsende liegen.')
+      return
     }
   }
 
+  if (isSubmitting.value) return
   isSubmitting.value = true
   const url = isEdit
     ? `${config.public.apiBase}/shifts/${shiftForm.value.id}`
@@ -397,13 +401,25 @@ const saveShift = async (isEdit = false) => {
   try {
     await authenticatedFetch(url, {
       method: isEdit ? 'PUT' : 'POST',
-      body: JSON.stringify(shiftForm.value)
+      body: JSON.stringify({
+        id: shiftForm.value.id,
+        name: shiftForm.value.name,
+        description: shiftForm.value.description,
+        requirements: shiftForm.value.requirements,
+        ageRestriction: shiftForm.value.ageRestriction,
+        requiredHelpers: shiftForm.value.requiredHelpers,
+        difficulty: Number(shiftForm.value.difficulty),
+        startTime: shiftForm.value.startTime,
+        endTime: shiftForm.value.endTime,
+        eventId: Number(shiftForm.value.eventId),
+        categoryIds: shiftForm.value.categoryIds,
+      }),
     })
     isCreateModalOpen.value = false
     isEditModalOpen.value = false
     await loadData()
   } catch (error) {
-    await showDialogAlert('Fehler beim Speichern: ' + error.message)
+    await showDialogAlert('Fehler beim Speichern: ' + (error.data?.message || error.message))
   } finally {
     isSubmitting.value = false
   }

@@ -250,16 +250,22 @@ const shiftImageCurrentUrl = computed(() => {
   return `${props.apiBase}${shiftForm.value.imageUrl}`
 })
 
+// datetime-local erwartet lokale Zeit, toISOString() allein wäre UTC
+const nowLocal = () => toLocal(new Date().toISOString())
+
 const editMinStartDate = computed(() => {
   const status = Number(editForm.value.eventStatus)
   if (status === 2 || status === 3) return ''
-  return new Date().toISOString().slice(0, 16)
+  // Bereits laufende Events: ursprünglichen Start weiterhin erlauben
+  const now = nowLocal()
+  const originalStart = toLocal(props.event?.startDate)
+  return originalStart && originalStart < now ? originalStart : now
 })
 
 const editMinEndDate = computed(() => {
   const status = Number(editForm.value.eventStatus)
   if (status === 2 || status === 3) return editForm.value.startDate || ''
-  return editForm.value.startDate || new Date().toISOString().slice(0, 16)
+  return editForm.value.startDate || nowLocal()
 })
 
 const shiftDifficultyLabel = (d) => ({ 0: 'Einfach', 1: 'Mittel', 2: 'Schwer' }[d] ?? 'Einfach')
@@ -363,7 +369,12 @@ const save = async () => {
       editImageFile.value = null
     }
     for (const shiftId of shiftsToDelete.value) {
-      try { await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' }) } catch { }
+      try {
+        await authenticatedFetch(`${config.public.apiBase}/shifts/${shiftId}`, { method: 'DELETE' })
+      } catch (e) {
+        console.error(`Dienst ${shiftId} konnte nicht gelöscht werden:`, e)
+        await showDialogAlert('Ein Dienst konnte nicht gelöscht werden.')
+      }
     }
     shiftsToDelete.value = []
     const eventId = props.event.id
@@ -416,7 +427,18 @@ const saveShift = async () => {
       : `${config.public.apiBase}/shifts`
     const res = await authenticatedFetch(url, {
       method: isEdit ? 'PUT' : 'POST',
-      body: JSON.stringify({ ...shiftForm.value, eventId: props.event.id }),
+      body: JSON.stringify({
+        id: shiftForm.value.id,
+        name: shiftForm.value.name,
+        description: shiftForm.value.description,
+        requiredHelpers: shiftForm.value.requiredHelpers,
+        ageRestriction: shiftForm.value.ageRestriction,
+        difficulty: Number(shiftForm.value.difficulty),
+        startTime: shiftForm.value.startTime,
+        endTime: shiftForm.value.endTime,
+        categoryIds: shiftForm.value.categoryIds,
+        eventId: props.event.id,
+      }),
     })
     if (shiftImageFile.value) {
       let shiftId = shiftForm.value.id
