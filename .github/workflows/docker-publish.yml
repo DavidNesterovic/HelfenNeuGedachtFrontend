@@ -143,18 +143,44 @@ jobs:
         with:
           node-version: 24
 
-      - name: Release Notes erzeugen (git-cliff, siehe cliff.toml)
+      # Annotierter Tag: erste Zeile der Tag-Nachricht = Titel-Zusatz, Rest = Einleitung der Release Notes
+      # (git tag -a v0.1.0 -m "Initial Release" -m "Beschreibung ..."). Lightweight-Tags -> nur Version als Titel.
+      - name: Release Notes erzeugen (Tag-Nachricht + git-cliff, siehe cliff.toml)
         run: |
+          TAG="$GITHUB_REF_NAME"
+          # actions/checkout macht annotierte Tags zu Lightweight-Tags -> Tag-Objekt explizit holen
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          TITLE="$TAG"
+          INTRO=""
+          if [ "$(git cat-file -t "refs/tags/$TAG")" = "tag" ]; then
+            SUBJECT="$(git tag -l --format='%(contents:subject)' "$TAG")"
+            INTRO="$(git tag -l --format='%(contents:body)' "$TAG")"
+            if [ -n "$SUBJECT" ] && [ "$SUBJECT" != "$TAG" ]; then TITLE="$TAG – $SUBJECT"; fi
+          fi
+          echo "RELEASE_TITLE=$TITLE" >> "$GITHUB_ENV"
+
+          CHANGES="$(npx --yes git-cliff@2.14.2 --current --strip all)"
+          COUNT="$(grep -c '^- ' <<< "$CHANGES" || true)"
           {
-            echo "## Docker Image"
+            if [ -n "$INTRO" ]; then echo "$INTRO"; echo; fi
+            echo "## Docker image"
             echo
             echo '```bash'
             echo "docker pull $IMAGE:$VERSION"
             echo '```'
             echo
-            echo "## Änderungen"
+            echo "## Changes"
             echo
-            npx --yes git-cliff@2.14.2 --current --strip all
+            # Erstes Release (kein vorheriger Tag): komplette Historie einklappen, damit die Einleitung oben bleibt
+            if git describe --tags --abbrev=0 "$TAG^" > /dev/null 2>&1; then
+              echo "$CHANGES"
+            else
+              echo "<details><summary>All $COUNT commits up to this release</summary>"
+              echo
+              echo "$CHANGES"
+              echo
+              echo "</details>"
+            fi
           } > release-notes.md
           cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -165,4 +191,4 @@ jobs:
           FLAGS=()
           [ "$PRERELEASE" = "true" ] && FLAGS+=(--prerelease)
           gh release create "$GITHUB_REF_NAME" --verify-tag \
-            --title "$GITHUB_REF_NAME" --notes-file release-notes.md "${FLAGS[@]}"
+            --title "$RELEASE_TITLE" --notes-file release-notes.md "${FLAGS[@]}"
