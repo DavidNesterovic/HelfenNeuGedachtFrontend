@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "license:check": "node scripts/check-licenses.mjs",
+    "audit:check": "node scripts/check-audit.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

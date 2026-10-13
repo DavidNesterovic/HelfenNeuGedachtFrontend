@@ -18,7 +18,7 @@ npm run typecheck      # nuxt typecheck (vue-tsc), any error blocks CI
 npm test               # Vitest unit tests (test/**/*.test.js), failing tests block CI
 npm run test:coverage  # same, plus coverage report in coverage/
 npm run license:check  # dependency license policy (scripts/check-licenses.mjs)
-npm audit --omit=dev --audit-level=high   # the blocking audit CI runs
+npm run audit:check    # the blocking audit CI runs: high/critical prod advisories, minus audit-exceptions.json
 ```
 
 Before you push, check your work with lint, typecheck and tests.
@@ -64,3 +64,5 @@ See `docs/pipeline.md` and `docs/quality-gate.md` for what the gate checks and w
 - `.github/workflows/quality-gate.yml` runs on every PR and is also called as a reusable workflow. It runs ESLint + typecheck, Semgrep, npm audit, gitleaks (full history) and the license check.
 - `docker-publish.yml` runs on pushes to `master`. It runs the gate, builds the two-stage `node:24-alpine` image (only `.output/`, non-root, no package managers), scans it with Trivy and pushes it to `ghcr.io/lgiselbrecht/helfenneugedacht.frontend` as `0.0.<run_number>` and `latest`.
 - CI and Docker use Node 24. Keep `package-lock.json` in sync, because CI uses `npm ci`.
+- **After any `npm install`/`npm update` on Windows, regenerate the lockfile on Linux** (`docs/pipeline.md`, "Known pitfalls"), otherwise Linux-only optional deps such as `@emnapi/*` go missing and `npm ci` fails in CI.
+- Accepted npm advisories live in `audit-exceptions.json` (GHSA id, reason, expiry). Only add one when there is no usable fix and the package doesn't end up in `.output/`.

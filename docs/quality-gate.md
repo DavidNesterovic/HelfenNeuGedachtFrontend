@@ -10,12 +10,12 @@ Every pull request runs `.github/workflows/quality-gate.yml`. On `master`, `dock
 | Static analysis | `nuxt typecheck` (vue-tsc) | Any type error | – |
 | Tests | Vitest (`@nuxt/test-utils`, files in `test/`) | Any failing test | Coverage is only reported (job summary + `coverage-report` artifact), there is no minimum yet |
 | Security: code (SAST) | Semgrep (`p/javascript`, `p/typescript`, `p/owasp-top-ten`) | Findings with severity `ERROR` | Findings with severity `WARNING` / `INFO` |
-| Security: dependencies | `npm audit` | `high` / `critical` in **production** dependencies | `low` / `moderate`, and anything that only affects devDependencies |
+| Security: dependencies | `npm audit` (`scripts/check-audit.mjs`) | `high` / `critical` in **production** dependencies, unless accepted in `audit-exceptions.json` | `low` / `moderate`, anything that only affects devDependencies, and accepted advisories until their expiry date |
 | Security: secrets | gitleaks (full git history) | Any secret found | – |
 | Security: container | Trivy (image scan) | `HIGH` / `CRITICAL` **with a fix available** | Everything else (low/medium, or no fix yet) |
 | Licenses | `scripts/check-licenses.mjs` | Strong copyleft / non-commercial: GPL, AGPL, SSPL, EUPL, CC-BY-NC | Weak copyleft (MPL, LGPL, EPL, CDDL) and unknown/custom licenses |
 
-Run the checks locally with `npm run lint`, `npm run typecheck`, `npm test` (or `npm run test:coverage`) and `npm run license:check`.
+Run the checks locally with `npm run lint`, `npm run typecheck`, `npm test` (or `npm run test:coverage`), `npm run audit:check` and `npm run license:check`.
 
 ## Why this split?
 
@@ -46,9 +46,26 @@ Run the checks locally with `npm run lint`, `npm run typecheck`, `npm test` (or 
 - **Trivy (blocking):** 4 fixable HIGH CVEs (`tar`, `brace-expansion`, `ip-address`). They were not in our dependencies but in the npm CLI that ships with the `node:24-alpine` base image. The production container never runs npm, so we delete npm, npx, corepack and yarn from the final stage. That removes the finding and leaves less in the image to attack.
 - **`npm ci` (blocking):** a lockfile generated on Windows was missing Linux-only optional dependencies (npm bug npm/cli#4828). Fix: regenerate the lockfile. The old Dockerfile used `npm install` as a fallback, which silently ignored the lockfile and hid this problem.
 
+## npm audit exceptions
+
+`nuxt` is a production dependency, so npm also counts Nuxt's dev and build tooling (CLI, devtools, Tailwind's file watcher) as "production". Some advisories in that tooling have no usable fix, and none of these packages end up in `.output/`, the only thing the Docker image contains. Blocking on them would stop every deployment without making the shipped app safer, which is the same reasoning as "CVEs without a fix" above.
+
+Such advisories can be accepted in `audit-exceptions.json`:
+
+```json
+{ "id": "GHSA-…", "package": "…", "reason": "why it's not reachable / why there's no fix", "added": "YYYY-MM-DD", "expires": "YYYY-MM-DD" }
+```
+
+- Only add an entry when there is no usable fix **and** the package is not in `.output/` (check with `npm run build` and look in `.output/server/node_modules`).
+- Use an expiry date of at most three months. After that the advisory blocks again and has to be re-checked.
+- Advisories that aren't listed still block. Entries that are no longer needed show up as a notice in the job log.
+
+Accepted on 2026-10-13: `node-forge` (via `listhen`, dev-server HTTPS), `braces` (via Tailwind's `chokidar`/`micromatch`), and `simple-git` + `@simple-git/argv-parser` (via `@nuxt/devtools`; the fix is in simple-git 4, which devtools 3.x can't load).
+
 ## Changing a threshold
 
 - ESLint: change the rule severity in `eslint.config.mjs` (`'error'` or `'warn'`).
 - Tests: add `coverage.thresholds` in `vitest.config.mjs` to make coverage blocking.
 - Licenses: edit the `ALLOW` / `WARN` / `BLOCK` lists in `scripts/check-licenses.mjs`.
-- Audit / Trivy / Semgrep: change the severity flags in the workflow files.
+- npm audit: `BLOCKING` severities in `scripts/check-audit.mjs`, accepted advisories in `audit-exceptions.json`.
+- Trivy / Semgrep: change the severity flags in the workflow files.

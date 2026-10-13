@@ -7,7 +7,8 @@ name: Quality Gate
 #   - ESLint-Errors, TypeScript-Fehler
 #   - Fehlschlagende Unit-Tests (Vitest)
 #   - Semgrep-Findings mit Severity ERROR
-#   - npm audit: HIGH/CRITICAL in Produktions-Dependencies
+#   - npm audit: HIGH/CRITICAL in Produktions-Dependencies (außer gültige
+#     Ausnahmen in audit-exceptions.json)
 #   - Secrets im Git-Verlauf (gitleaks)
 #   - Starkes Copyleft (GPL/AGPL/SSPL/...) in Produktions-Dependencies
 # NUR WARNUNG (Annotation, Pipeline läuft weiter):
@@ -105,8 +106,9 @@ jobs:
           npm audit --package-lock-only --audit-level=low \
             || echo "::warning title=npm audit::Schwachstellen gefunden (Details im Log) – nicht blockierend"
 
-      - name: HIGH/CRITICAL in Produktions-Dependencies (blockierend)
-        run: npm audit --package-lock-only --omit=dev --audit-level=high
+      # Ausnahmen (mit Begründung + Ablaufdatum) stehen in audit-exceptions.json
+      - name: HIGH/CRITICAL in Produktions-Dependencies (blockierend, außer Ausnahmen)
+        run: npm run audit:check
 
   secrets:
     name: Security – Secret Scan (gitleaks)

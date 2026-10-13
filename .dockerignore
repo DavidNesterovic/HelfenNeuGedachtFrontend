@@ -15,3 +15,4 @@ logs
 .env
 .env.*
 README.md
+coverage

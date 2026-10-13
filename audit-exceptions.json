@@ -1,0 +1,44 @@
+[
+  {
+    "id": "GHSA-86w9-cpqp-85rv",
+    "package": "node-forge",
+    "reason": "Nur über @nuxt/cli -> listhen (HTTPS-Zertifikate für den Dev-Server). Nicht in .output/ und damit nicht im Docker-Image. node-forge 1.4.0 ist die neueste Version, es gibt noch keinen Fix.",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  },
+  {
+    "id": "GHSA-vfj7-8cjw-p6xm",
+    "package": "braces",
+    "reason": "Nur über tailwindcss -> chokidar/micromatch (Datei-Globbing beim Build). Nicht in .output/ und damit nicht im Docker-Image. braces 3.0.3 ist die neueste Version, es gibt noch keinen Fix.",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  },
+  {
+    "id": "GHSA-x6jw-m9v5-85vh",
+    "package": "simple-git",
+    "reason": "Nur über @nuxt/devtools (läuft nur bei `nuxt dev`). Nicht in .output/. Fix erst in simple-git 4, das @nuxt/devtools 3.x nicht unterstützt (kein Default-Export mehr, `nuxt prepare` bricht ab).",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  },
+  {
+    "id": "GHSA-g4wm-2vf7-vfgr",
+    "package": "simple-git",
+    "reason": "Siehe GHSA-x6jw-m9v5-85vh: nur @nuxt/devtools, Fix erst in simple-git 4.",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  },
+  {
+    "id": "GHSA-858h-whjf-mvg5",
+    "package": "simple-git",
+    "reason": "Siehe GHSA-x6jw-m9v5-85vh: nur @nuxt/devtools, Fix erst in simple-git 4.",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  },
+  {
+    "id": "GHSA-v5rq-49vh-5v5c",
+    "package": "@simple-git/argv-parser",
+    "reason": "Abhängigkeit von simple-git 3 (siehe GHSA-x6jw-m9v5-85vh). Fix erst mit simple-git 4.",
+    "added": "2026-10-13",
+    "expires": "2027-01-13"
+  }
+]

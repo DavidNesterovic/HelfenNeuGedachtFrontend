@@ -38,7 +38,7 @@ npm run lint          # ESLint (errors = blocking)
 npm run typecheck     # vue-tsc
 npm test              # Vitest (npm run test:coverage for the coverage report)
 npm run license:check # license policy
-npm audit --omit=dev --audit-level=high
+npm run audit:check   # high/critical prod advisories, minus audit-exceptions.json
 ```
 
 ## Known pitfalls
@@ -47,6 +47,7 @@ npm audit --omit=dev --audit-level=high
   ```bash
   docker run --rm -v "$PWD:/app" -w /app node:24 npm install --package-lock-only --ignore-scripts
   ```
+  Do this after **every** `npm install`/`npm update` on Windows. On 2026-10-13 a Windows lockfile was missing `@emnapi/core` and `@emnapi/runtime`, and every job that runs `npm ci` failed.
 - **Node version** is set in three places: `quality-gate.yml`, the `Dockerfile`, and your local machine. They must stay on the same major version (currently 24). `license-checker-rseidelsohn` requires Node 24 or newer.
 
 ## Open decisions
@@ -58,7 +59,7 @@ These are not implemented yet. Each one needs a team decision.
 1. **Pin versions to hashes.** `semgrep/semgrep` currently runs `latest`, and the GitHub Actions (`@v5`) and the Trivy and gitleaks images use tags that can be moved. Pinning to commit SHAs or image digests protects against a hijacked tag, but you then need Dependabot or Renovate to keep the pins up to date.
 2. **Scheduled scans.** New CVEs appear without any change to our code. A weekly `schedule:` trigger on the gate plus a Trivy scan of the `latest` image would catch them. Decide who gets notified.
 3. **Automatic dependency updates** (Dependabot or Renovate). Decide on grouping, how often they run, and whether patch updates can be merged automatically once the gate is green.
-4. **Exceptions.** Right now nothing can be ignored. Do we allow a `.trivyignore` or Semgrep `nosemgrep` with a required reason and an expiry date? Who approves it?
+4. **Exceptions.** npm audit has them now: `audit-exceptions.json` lists accepted advisories with a reason and an expiry date, and an expired entry blocks again (see [quality-gate.md](quality-gate.md#npm-audit-exceptions)). Still open: the same for Trivy (`.trivyignore`) and Semgrep (`nosemgrep`), and who approves new entries.
 5. **Registry credentials.** `GHCR_PAT` is one team member's personal token. If that person leaves or the token expires, deployment stops. Options: `GITHUB_TOKEN` with `packages: write`, if the image moves to the same account or an org, or a bot account.
 6. **SBOM and signing.** Generate a software bill of materials (Trivy or Syft) and sign images with cosign, so the deployment side can verify where an image came from.
 7. **Reporting.** Findings currently only appear in the logs and as annotations. Uploading SARIF to the GitHub Security tab needs a public repo or GitHub Advanced Security. If the repo is public, it's also worth considering CodeQL alongside Semgrep.
