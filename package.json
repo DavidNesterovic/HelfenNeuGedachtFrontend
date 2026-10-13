@@ -10,7 +10,10 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "license:check": "node scripts/check-licenses.mjs"
+    "license:check": "node scripts/check-licenses.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
@@ -22,9 +25,14 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.3",
+    "@vitest/coverage-v8": "^5.0.4",
+    "@vue/test-utils": "^2.5.1",
     "eslint": "^10.11.0",
+    "happy-dom": "^21.0.1",
     "license-checker-rseidelsohn": "^5.0.1",
     "typescript": "^6.0.3",
+    "vitest": "^5.0.4",
     "vue-tsc": "^3.3.11"
   }
 }

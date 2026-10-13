@@ -7,7 +7,7 @@ export default defineNuxtConfig({
       viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
     },
   },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint', '@nuxt/test-utils/module'],
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:5062/api',

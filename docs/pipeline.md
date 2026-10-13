@@ -11,6 +11,7 @@ flowchart LR
     subgraph QG[Quality Gate · quality-gate.yml]
         direction TB
         A[Static Code Analysis<br/>ESLint + typecheck]
+        T[Unit Tests<br/>Vitest + coverage]
         B[SAST<br/>Semgrep]
         C[Dependencies<br/>npm audit]
         D[Secrets<br/>gitleaks]
@@ -23,7 +24,7 @@ flowchart LR
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| `quality-gate.yml` | Every pull request, manual, or called by `docker-publish.yml` | Runs the five checks in parallel. If any check fails, the gate fails. |
+| `quality-gate.yml` | Every pull request, manual, or called by `docker-publish.yml` | Runs the six checks in parallel. If any check fails, the gate fails. |
 | `docker-publish.yml` | Push to `master`, manual | Runs the gate, then builds the image, scans it with Trivy and pushes it to GHCR. |
 
 The gate is a reusable workflow (`workflow_call`), so PRs and deployments always run the same checks.
@@ -35,6 +36,7 @@ The gate is a reusable workflow (`workflow_call`), so PRs and deployments always
 ```bash
 npm run lint          # ESLint (errors = blocking)
 npm run typecheck     # vue-tsc
+npm test              # Vitest (npm run test:coverage for the coverage report)
 npm run license:check # license policy
 npm audit --omit=dev --audit-level=high
 ```
@@ -66,7 +68,10 @@ These are not implemented yet. Each one needs a team decision.
 8. **Paying down warnings.** ESLint shows about 250 warnings today. Options:
    - a ratchet: a `--max-warnings` limit that only ever goes down
    - making individual rules blocking once they're cleaned up (good first candidates are `nuxt/prefer-import-meta` and `no-unused-vars`, since both can mostly be fixed with `--fix`)
-9. **Tests.** There are no unit or E2E tests yet, so the gate only checks form, not behaviour. The next step would be Vitest plus a few Playwright smoke tests, possibly with a coverage threshold. Decide whether to start blocking on coverage or begin with warnings.
+9. **Tests.** Vitest unit tests (`test/`) now run in the gate: failing tests block, coverage is only reported. Still open:
+   - a coverage threshold or ratchet (`coverage.thresholds` in `vitest.config.mjs`)
+   - component tests for the `App*` primitives and modals
+   - Playwright E2E smoke tests, with the API mocked through `page.route()` or the backend started as a container
 10. **License policy details.** Is MPL-2.0 permanently acceptable? Should LGPL block, since it ends up bundled into the client JS? Who reviews "unknown" licenses such as `only` (`MIT*`)?
 11. **Semgrep rulesets.** We currently use `p/javascript`, `p/typescript` and `p/owasp-top-ten`. Options include adding Vue-specific or custom rules for our API calls, or turning some WARNING rules into blocking ones if they rarely give false positives.
 
@@ -75,7 +80,7 @@ These are not implemented yet. Each one needs a team decision.
 12. **Branch protection.** Require the gate as a status check on `master` and don't allow direct pushes. Today direct pushes are allowed; the gate still protects the deployment, but nobody reviews the code first.
 13. **Versioning.** `0.0.<run_number>` plus `latest` isn't semantic versioning, and `latest` makes rollbacks harder to follow. Options: semver from git tags or conventional commits, or tagging images with the commit SHA.
 14. **Deployment.** The pipeline stops at `docker push`. It's still open whether and how deployment happens automatically (staging vs. production, manual approval via GitHub Environments).
-15. **Runtime and cost.** Three jobs each run their own `npm ci`. That keeps them isolated but takes more minutes. We could share `node_modules` through a cache or an artifact if runtime becomes a problem.
+15. **Runtime and cost.** Four jobs each run their own `npm ci`. That keeps them isolated but takes more minutes. We could share `node_modules` through a cache or an artifact if runtime becomes a problem.
 16. **Backend repo.** Set up the same gate in the backend with .NET equivalents:
     - static analysis: `dotnet format --verify-no-changes` and the analyzers with `TreatWarningsAsErrors` for selected rules
     - security: `dotnet list package --vulnerable`

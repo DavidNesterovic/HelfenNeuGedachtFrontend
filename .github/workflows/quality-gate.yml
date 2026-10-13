@@ -5,12 +5,14 @@ name: Quality Gate
 #
 # BLOCKIEREND (Exit-Code != 0):
 #   - ESLint-Errors, TypeScript-Fehler
+#   - Fehlschlagende Unit-Tests (Vitest)
 #   - Semgrep-Findings mit Severity ERROR
 #   - npm audit: HIGH/CRITICAL in Produktions-Dependencies
 #   - Secrets im Git-Verlauf (gitleaks)
 #   - Starkes Copyleft (GPL/AGPL/SSPL/...) in Produktions-Dependencies
 # NUR WARNUNG (Annotation, Pipeline läuft weiter):
 #   - ESLint-Warnings, Semgrep WARNING/INFO
+#   - Test-Coverage (wird nur berichtet, kein Mindestwert)
 #   - npm audit: LOW/MODERATE bzw. Findings in devDependencies
 #   - Schwaches Copyleft (MPL/LGPL/EPL) oder unbekannte Lizenzen
 
@@ -43,6 +45,38 @@ jobs:
 
       - name: TypeScript Typecheck
         run: npx nuxt typecheck
+
+  tests:
+    name: Unit Tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Vitest (fehlschlagende Tests blockieren)
+        run: npx vitest run --coverage
+
+      - name: Coverage-Zusammenfassung (nur Info)
+        if: always() && hashFiles('coverage/coverage-summary.json') != ''
+        run: |
+          node -e "
+            const t = require('./coverage/coverage-summary.json').total;
+            const rows = ['statements', 'branches', 'functions', 'lines']
+              .map(k => '| ' + k + ' | ' + t[k].pct + ' % | ' + t[k].covered + '/' + t[k].total + ' |');
+            console.log(['### Test-Coverage', '', '| Metrik | Abdeckung | Abgedeckt |', '|---|---|---|', ...rows].join('\n'));
+          " >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Coverage-Report hochladen
+        if: always() && hashFiles('coverage/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
 
   sast:
     name: Security – SAST (Semgrep)
