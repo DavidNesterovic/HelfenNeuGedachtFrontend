@@ -62,7 +62,10 @@ These are set in `eslint.config.mjs`. Rules at `error` fail the pipeline:
 See `docs/pipeline.md` and `docs/quality-gate.md` for what the gate checks and which failures block.
 
 - `.github/workflows/quality-gate.yml` runs on every PR and is also called as a reusable workflow. It runs ESLint + typecheck, Semgrep, npm audit, gitleaks (full history) and the license check.
-- `docker-publish.yml` runs on pushes to `master`. It runs the gate, builds the two-stage `node:24-alpine` image (only `.output/`, non-root, no package managers), scans it with Trivy and pushes it to `ghcr.io/lgiselbrecht/helfenneugedacht.frontend` as `0.0.<run_number>` and `latest`.
+- `docker-publish.yml` ("Build & Release") runs on pushes to `master` and on `v*` tags. It runs the gate, builds the two-stage `node:24-alpine` image (only `.output/`, non-root, no package managers), scans it with Trivy and pushes it to `ghcr.io/lgiselbrecht/helfenneugedacht.frontend`:
+  - `master` → `edge` + `sha-<commit>`
+  - tag `vX.Y.Z` → `X.Y.Z`, `X.Y`, `latest`, plus a GitHub Release with notes from git-cliff (`cliff.toml`, preview with `npm run release:notes`)
+- Releases are cut by pushing a semver tag on `master`; the tag is the only version source. See `docs/release.md`. Use conventional commit prefixes (`feat:`, `fix:`, ...) so commits land in the right release-notes section.
 - CI and Docker use Node 24. Keep `package-lock.json` in sync, because CI uses `npm ci`.
 - **After any `npm install`/`npm update` on Windows, regenerate the lockfile on Linux** (`docs/pipeline.md`, "Known pitfalls"), otherwise Linux-only optional deps such as `@emnapi/*` go missing and `npm ci` fails in CI.
 - Accepted npm advisories live in `audit-exceptions.json` (GHSA id, reason, expiry). Only add one when there is no usable fix and the package doesn't end up in `.output/`.

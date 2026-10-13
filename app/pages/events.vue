@@ -29,7 +29,7 @@
         </div>
 
 
-        <!-- Kategorien (Slider auf Mobile/Tablet, Liste auf Desktop) -->
+        <!-- Kategorien (Slider auf Mobile/is itTablet, Liste auf Desktop) -->
         <div v-if="categories.length > 0" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div class="hidden lg:flex items-center justify-between mb-3">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Interessen</h3>

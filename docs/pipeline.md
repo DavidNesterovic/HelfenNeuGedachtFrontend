@@ -8,6 +8,7 @@ This doc gives an overview of the frontend pipeline and lists decisions that are
 flowchart LR
     PR[Pull Request] --> QG
     Push[Push to master] --> QG
+    Tag[Tag vX.Y.Z] --> QG
     subgraph QG[Quality Gate · quality-gate.yml]
         direction TB
         A[Static Code Analysis<br/>ESLint + typecheck]
@@ -17,15 +18,16 @@ flowchart LR
         D[Secrets<br/>gitleaks]
         E[Licenses<br/>check-licenses.mjs]
     end
-    QG -->|only on master, all green| Build[docker build]
+    QG -->|master or tag, all green| Build[docker build]
     Build --> Scan[Trivy image scan]
-    Scan -->|no blocking findings| Ship[docker push<br/>ghcr.io · 0.0.N + latest]
+    Scan -->|no blocking findings| Ship[docker push<br/>master: edge + sha-…<br/>tag: X.Y.Z + X.Y + latest]
+    Ship -->|only for tags| Release[GitHub Release<br/>notes from git-cliff]
 ```
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | `quality-gate.yml` | Every pull request, manual, or called by `docker-publish.yml` | Runs the six checks in parallel. If any check fails, the gate fails. |
-| `docker-publish.yml` | Push to `master`, manual | Runs the gate, then builds the image, scans it with Trivy and pushes it to GHCR. |
+| `docker-publish.yml` ("Build & Release") | Push to `master`, push of a `v*` tag, manual | Runs the gate, then builds the image, scans it with Trivy and pushes it to GHCR. For tags it also creates the GitHub Release. See [release.md](release.md). |
 
 The gate is a reusable workflow (`workflow_call`), so PRs and deployments always run the same checks.
 
@@ -79,7 +81,7 @@ These are not implemented yet. Each one needs a team decision.
 ### Process and deployment
 
 12. **Branch protection.** Require the gate as a status check on `master` and don't allow direct pushes. Today direct pushes are allowed; the gate still protects the deployment, but nobody reviews the code first.
-13. **Versioning.** `0.0.<run_number>` plus `latest` isn't semantic versioning, and `latest` makes rollbacks harder to follow. Options: semver from git tags or conventional commits, or tagging images with the commit SHA.
+13. **Versioning.** Done: semantic versioning from manual git tags, releases with generated notes, `latest` only for releases (see [release.md](release.md)). Still open: enforcing conventional commit messages (e.g. commitlint in the gate), so the release notes need fewer entries under *Other*. The old `0.0.<run_number>` images stay on GHCR and could be cleaned up.
 14. **Deployment.** The pipeline stops at `docker push`. It's still open whether and how deployment happens automatically (staging vs. production, manual approval via GitHub Environments).
 15. **Runtime and cost.** Four jobs each run their own `npm ci`. That keeps them isolated but takes more minutes. We could share `node_modules` through a cache or an artifact if runtime becomes a problem.
 16. **Backend repo.** Set up the same gate in the backend with .NET equivalents:

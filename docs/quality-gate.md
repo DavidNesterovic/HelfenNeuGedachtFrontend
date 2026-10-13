@@ -1,6 +1,6 @@
 # Quality Gate
 
-Every pull request runs `.github/workflows/quality-gate.yml`. On `master`, `docker-publish.yml` runs the same gate first and only builds and pushes the image if the gate passes. After the build, the image itself is scanned before `docker push`.
+Every pull request runs `.github/workflows/quality-gate.yml`. On `master` and for release tags, `docker-publish.yml` runs the same gate first and only builds, pushes and releases if the gate passes. After the build, the image itself is scanned before `docker push`.
 
 ## Overview
 

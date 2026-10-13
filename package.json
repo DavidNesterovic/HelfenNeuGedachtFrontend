@@ -14,7 +14,8 @@
     "audit:check": "node scripts/check-audit.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "release:notes": "npx --yes git-cliff@2.14.2 --unreleased --strip all"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",

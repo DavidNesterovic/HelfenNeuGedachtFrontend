@@ -1,8 +1,14 @@
-name: Docker Build & Push
+name: Build & Release
+
+# Push auf master  -> Quality Gate, Image als "edge" + "sha-<commit>" (Entwicklungsstand)
+# Tag vX.Y.Z       -> Quality Gate, Image als "X.Y.Z", "X.Y", "latest" + GitHub Release mit Release Notes
+# Tag vX.Y.Z-rc.1  -> wie oben, aber nur "X.Y.Z-rc.1" und als Pre-Release markiert
+# Ablauf und Regeln: docs/release.md
 
 on:
   push:
     branches: [master]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -11,33 +17,102 @@ permissions:
 env:
   IMAGE: ghcr.io/lgiselbrecht/helfenneugedacht.frontend
 
+# Läufe für denselben Branch/Tag nacheinander, damit "edge" nie von einem älteren Lauf überschrieben wird
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  version:
+    name: Version bestimmen
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+      release: ${{ steps.meta.outputs.release }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # für die master-Prüfung des Tags
+
+      - id: meta
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"
+            if ! [[ "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error title=Release::Tag '$TAG' ist keine gültige Version (erwartet vX.Y.Z oder vX.Y.Z-rc.N)"
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+              echo "::error title=Release::Tag '$TAG' zeigt auf einen Commit, der nicht auf master liegt"
+              exit 1
+            fi
+            VERSION="${TAG#v}"
+            if [ -n "${BASH_REMATCH[4]}" ]; then
+              PRERELEASE=true
+              TAGS="$VERSION"
+            else
+              PRERELEASE=false
+              TAGS="$VERSION ${BASH_REMATCH[1]}.${BASH_REMATCH[2]} latest"
+            fi
+            RELEASE=true
+          else
+            if [ "$GITHUB_REF_NAME" != "master" ]; then
+              echo "::error title=Build::Images werden nur von master oder von Release-Tags gebaut"
+              exit 1
+            fi
+            VERSION="edge-$SHORT_SHA"
+            TAGS="edge sha-$SHORT_SHA"
+            RELEASE=false
+            PRERELEASE=false
+          fi
+          {
+            echo "version=$VERSION"
+            echo "tags=$TAGS"
+            echo "release=$RELEASE"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version: \`$VERSION\` · Image-Tags: \`$TAGS\`" >> "$GITHUB_STEP_SUMMARY"
+
   quality-gate:
     uses: ./.github/workflows/quality-gate.yml
 
   build-and-push:
-    needs: quality-gate
+    name: Docker Build, Scan & Push
+    needs: [version, quality-gate]
     runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TAGS: ${{ needs.version.outputs.tags }}
     steps:
       - uses: actions/checkout@v5
 
       - name: Build
         run: |
-          VERSION="0.0.${{ github.run_number }}"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          docker build --pull -t "$IMAGE:$VERSION" -t "$IMAGE:latest" .
+          TAG_ARGS=()
+          for t in $TAGS; do TAG_ARGS+=(-t "$IMAGE:$t"); done
+          docker build --pull "${TAG_ARGS[@]}" \
+            --label "org.opencontainers.image.title=HelfenNeuGedacht Frontend" \
+            --label "org.opencontainers.image.version=$VERSION" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            .
+          echo "SCAN_REF=$IMAGE:${TAGS%% *}" >> "$GITHUB_ENV"
 
       # Image-Scan (Base-Image + OS-Pakete). Nur behebbare Lücken blockieren,
       # sonst wäre die Pipeline wegen Upstream-CVEs ohne Fix dauerhaft rot.
       - name: Trivy – alle Findings (nur Warnung)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.65.0 \
-            image --severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 "$IMAGE:$VERSION"
+            image --severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 "$SCAN_REF"
 
       - name: Trivy – HIGH/CRITICAL mit Fix (blockierend)
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.65.0 \
-            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE:$VERSION"
+            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 "$SCAN_REF"
 
       - name: Push
         env:
@@ -45,7 +120,49 @@ jobs:
           TOKEN: ${{ secrets.GHCR_PAT }}
         run: |
           echo "$TOKEN" | docker login ghcr.io -u lgiselbrecht --password-stdin
-          docker push "$IMAGE:$VERSION"
-          docker push "$IMAGE:latest"
+          for t in $TAGS; do
+            docker push "$IMAGE:$t"
+            echo "Gepusht: \`$IMAGE:$t\`" >> "$GITHUB_STEP_SUMMARY"
+          done
 
-          echo "Gepusht: $IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"
+  release:
+    name: GitHub Release
+    needs: [version, build-and-push]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Release anlegen
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # git-cliff braucht alle Commits und Tags
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Release Notes erzeugen (git-cliff, siehe cliff.toml)
+        run: |
+          {
+            echo "## Docker Image"
+            echo
+            echo '```bash'
+            echo "docker pull $IMAGE:$VERSION"
+            echo '```'
+            echo
+            echo "## Änderungen"
+            echo
+            npx --yes git-cliff@2.14.2 --current --strip all
+          } > release-notes.md
+          cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FLAGS=()
+          [ "$PRERELEASE" = "true" ] && FLAGS+=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" --verify-tag \
+            --title "$GITHUB_REF_NAME" --notes-file release-notes.md "${FLAGS[@]}"
