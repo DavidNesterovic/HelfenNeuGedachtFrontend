@@ -20,7 +20,7 @@ flowchart LR
     end
     QG -->|master or tag, all green| Build[docker build]
     Build --> Scan[Trivy image scan]
-    Scan -->|no blocking findings| Ship[docker push<br/>master: edge + sha-…<br/>tag: X.Y.Z + X.Y + latest]
+    Scan -->|no blocking findings| Ship[docker push<br/>master: latest + edge + sha-…<br/>tag: X.Y.Z + X.Y + latest]
     Ship -->|only for tags| Release[GitHub Release<br/>notes from git-cliff]
 ```
 
@@ -81,7 +81,7 @@ These are not implemented yet. Each one needs a team decision.
 ### Process and deployment
 
 12. **Branch protection.** Require the gate as a status check on `master` and don't allow direct pushes. Today direct pushes are allowed; the gate still protects the deployment, but nobody reviews the code first.
-13. **Versioning.** Done: semantic versioning from manual git tags, releases with generated notes, `latest` only for releases (see [release.md](release.md)). Still open: enforcing conventional commit messages (e.g. commitlint in the gate), so the release notes need fewer entries under *Other*. The old `0.0.<run_number>` images stay on GHCR and could be cleaned up.
+13. **Versioning.** Done: semantic versioning from manual git tags, releases with generated notes, `latest` for every build from `master` (see [release.md](release.md)). Still open: enforcing conventional commit messages (e.g. commitlint in the gate), so the release notes need fewer entries under *Other*. The old `0.0.<run_number>` images stay on GHCR and could be cleaned up.
 14. **Deployment.** The pipeline stops at `docker push`. It's still open whether and how deployment happens automatically (staging vs. production, manual approval via GitHub Environments).
 15. **Runtime and cost.** Four jobs each run their own `npm ci`. That keeps them isolated but takes more minutes. We could share `node_modules` through a cache or an artifact if runtime becomes a problem.
 16. **Backend repo.** Set up the same gate in the backend with .NET equivalents:

@@ -1,6 +1,6 @@
 name: Build & Release
 
-# Push auf master  -> Quality Gate, Image als "edge" + "sha-<commit>" (Entwicklungsstand)
+# Push auf master  -> Quality Gate, Image als "latest" + "edge" + "sha-<commit>" (wird deployt)
 # Tag vX.Y.Z       -> Quality Gate, Image als "X.Y.Z", "X.Y", "latest" + GitHub Release mit Release Notes
 # Tag vX.Y.Z-rc.1  -> wie oben, aber nur "X.Y.Z-rc.1" und als Pre-Release markiert
 # Ablauf und Regeln: docs/release.md
@@ -66,7 +66,8 @@ jobs:
               exit 1
             fi
             VERSION="edge-$SHORT_SHA"
-            TAGS="edge sha-$SHORT_SHA"
+            # latest = neuester Stand von master, den Komodo deployt
+            TAGS="latest edge sha-$SHORT_SHA"
             RELEASE=false
             PRERELEASE=false
           fi

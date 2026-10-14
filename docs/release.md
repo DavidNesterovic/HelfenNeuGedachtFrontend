@@ -11,7 +11,7 @@ A release is a git tag on `master`. Pushing the tag starts `.github/workflows/do
 | **Release** | GitHub Releases page of the repo | Release `v1.2.0` |
 | **Release notes** | Body of the GitHub Release, generated from the commits since the previous tag by [git-cliff](https://git-cliff.org) (`cliff.toml`) | Sections *Features*, *Bug Fixes*, ..., *Other*, plus the `docker pull` command |
 
-Pushes to `master` without a tag still build an image, but only as `edge` and `sha-<commit>`. So `latest` always means "the newest stable release", never a development state.
+Pushes to `master` without a tag build an image tagged `latest`, `edge` and `sha-<commit>`, and the pipeline then triggers the deployment via Komodo. So `latest` always means "the newest build from `master`". To pin a stable version, use the version tag (e.g. `:1.2.0`) instead of `latest`.
 
 ## Versioning (Semantic Versioning)
 

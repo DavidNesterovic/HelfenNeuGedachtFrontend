@@ -63,7 +63,7 @@ See `docs/pipeline.md` and `docs/quality-gate.md` for what the gate checks and w
 
 - `.github/workflows/quality-gate.yml` runs on every PR and is also called as a reusable workflow. It runs ESLint + typecheck, Semgrep, npm audit, gitleaks (full history) and the license check.
 - `docker-publish.yml` ("Build & Release") runs on pushes to `master` and on `v*` tags. It runs the gate, builds the two-stage `node:24-alpine` image (only `.output/`, non-root, no package managers), scans it with Trivy and pushes it to `ghcr.io/lgiselbrecht/helfenneugedacht.frontend`:
-  - `master` → `edge` + `sha-<commit>`
+  - `master` → `latest` + `edge` + `sha-<commit>`, then deploy via Komodo webhook
   - tag `vX.Y.Z` → `X.Y.Z`, `X.Y`, `latest`, plus a GitHub Release with notes from git-cliff (`cliff.toml`, preview with `npm run release:notes`)
 - Releases are cut by pushing a semver tag on `master`; the tag is the only version source. See `docs/release.md`. Use conventional commit prefixes (`feat:`, `fix:`, ...) so commits land in the right release-notes section.
 - CI and Docker use Node 24. Keep `package-lock.json` in sync, because CI uses `npm ci`.
