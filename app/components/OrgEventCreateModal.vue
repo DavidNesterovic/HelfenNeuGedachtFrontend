@@ -24,7 +24,14 @@
               <ImageUploadCrop :aspect-ratio="1" @change="f => imageFile = f" @clear="imageFile = null" />
             </div>
 
-            <AppField v-model="newEvent.location" label="Ort" placeholder="Marktplatz" :required="true" />
+            <LocationAutocomplete
+              v-model="newEvent.location"
+              v-model:coordinates="newEventCoordinates"
+              label="Ort"
+              placeholder="z. B. Marktplatz, 6850 Dornbirn"
+              hint="Ort aus der Liste wählen, damit Helfer:innen das Event in der Umkreissuche finden."
+              :required="true"
+            />
 
             <div class="grid grid-cols-2 gap-2">
               <AppField v-model="newEvent.startDate" type="datetime-local" label="Start" :min="minDateTime" :required="true" />
@@ -136,6 +143,7 @@
 
 <script setup>
 import { getAuthHeader, authenticatedFetch, getUserInfo } from '~/assets/utils/auth'
+import LocationAutocomplete from '~/components/LocationAutocomplete.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -149,6 +157,8 @@ const config = useRuntimeConfig()
 const { alert: showDialogAlert } = useDialog()
 
 const newEvent = ref({ title: '', location: '', startDate: '', endDate: '', description: '' })
+// { latitude, longitude } aus der Ortssuche. Bei Freitext geocodiert das Backend den Ort selbst.
+const newEventCoordinates = ref(null)
 const newEventShifts = ref([])
 const imageFile = ref(null)
 
@@ -196,6 +206,7 @@ const shiftImagePreview = computed(() => {
 watch(() => props.modelValue, (open) => {
   if (!open) return
   newEvent.value = { title: '', location: '', startDate: '', endDate: '', description: '' }
+  newEventCoordinates.value = null
   newEventShifts.value = []
   imageFile.value = null
   resetShiftForm()
@@ -284,7 +295,13 @@ const submit = async () => {
   try {
     const res = await authenticatedFetch(`${config.public.apiBase}/events`, {
       method: 'POST',
-      body: JSON.stringify({ ...newEvent.value, organizationId: parseInt(user.OrganizationId), status: 0 }),
+      body: JSON.stringify({
+        ...newEvent.value,
+        latitude: newEventCoordinates.value?.latitude ?? null,
+        longitude: newEventCoordinates.value?.longitude ?? null,
+        organizationId: parseInt(user.OrganizationId),
+        status: 0,
+      }),
     })
     const created = await res.json()
 

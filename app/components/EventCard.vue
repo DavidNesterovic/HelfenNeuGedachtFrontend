@@ -29,6 +29,15 @@
         <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:text-[15px] text-slate-500">
           <span>{{ formattedDate }}</span>
           <span>{{ event.location }}</span>
+          <span
+            v-if="distanceLabel"
+            class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            {{ distanceLabel }}
+          </span>
           <span>{{ durationLabel }}</span>
         </div>
 
@@ -166,6 +175,7 @@
 
 <script setup>
 import { getAuthHeader } from '~/assets/utils/auth'
+import { formatDistance } from '~/assets/utils/geo'
 
 const props = defineProps({
   event: {
@@ -239,6 +249,8 @@ const helperLabel = computed(() => {
     || (props.event.shifts ?? []).reduce((sum, s) => sum + (s.requiredHelpers ?? 0), 0)
   return `${required} Helfer gesucht`
 })
+
+const distanceLabel = computed(() => formatDistance(props.event.distanceKm))
 
 const formattedDate = computed(() => {
   // Intl.format wirft bei ungültigem Datum einen RangeError und würde die ganze Liste crashen

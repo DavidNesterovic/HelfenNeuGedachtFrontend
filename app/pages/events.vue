@@ -29,6 +29,43 @@
         </div>
 
 
+        <!-- Umkreis (Luftlinie) -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Umkreis</h3>
+            <button
+              v-if="geo"
+              type="button"
+              class="text-[11px] font-semibold text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              @click="clearLocation"
+            >
+              Ort entfernen
+            </button>
+          </div>
+          <LocationAutocomplete
+            v-model="locationText"
+            :coordinates="geo"
+            label="Ort"
+            placeholder="Ort oder PLZ eingeben"
+            allow-current-location
+            @select="onLocationSelect"
+          />
+          <div v-if="geo" class="mt-3">
+            <p class="text-xs font-medium text-slate-500 mb-2">Entfernung (Luftlinie)</p>
+            <div class="flex flex-wrap gap-2">
+              <FilterChip
+                v-for="option in RADIUS_OPTIONS"
+                :key="option ?? 'all'"
+                :active="radiusKm === option"
+                class="!px-3 !py-1.5 !text-xs"
+                @click="setRadius(option)"
+              >
+                {{ option ? `${option} km` : 'Alle' }}
+              </FilterChip>
+            </div>
+          </div>
+        </div>
+
         <!-- Kategorien (Slider auf Mobile/Tablet, Liste auf Desktop) -->
         <div v-if="categories.length > 0" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div class="hidden lg:flex items-center justify-between mb-3">
@@ -75,11 +112,19 @@
 
         <!-- Empty State -->
         <div v-else-if="filteredEvents.length === 0" class="rounded-3xl bg-white border border-dashed border-slate-200">
-          <AppEmptyState heading="Keine passenden Einsätze" subtext="Ändere deine Suchkriterien oder setze die Filter zurück.">
+          <AppEmptyState
+            :heading="geo && radiusKm ? `Keine Einsätze im Umkreis von ${radiusKm} km` : 'Keine passenden Einsätze'"
+            :subtext="geo && radiusKm ? 'Vergrößere den Umkreis oder ändere deine Suchkriterien.' : 'Ändere deine Suchkriterien oder setze die Filter zurück.'"
+          >
             <template #icon>
               <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" />
               </svg>
+            </template>
+            <template v-if="geo && nextRadius !== undefined" #action>
+              <AppButton variant="secondary" size="sm" class="mt-4" @click="setRadius(nextRadius)">
+                {{ nextRadius ? `Umkreis auf ${nextRadius} km vergrößern` : 'Alle Entfernungen zeigen' }}
+              </AppButton>
             </template>
           </AppEmptyState>
         </div>
@@ -141,6 +186,7 @@
 <script setup>
 import EventCard from '~/components/EventCard.vue'
 import FilterChip from '~/components/FilterChip.vue'
+import LocationAutocomplete from '~/components/LocationAutocomplete.vue'
 import { getAuthHeader } from '~/assets/utils/auth'
 
 definePageMeta({
@@ -156,6 +202,94 @@ const filters = ref({
 })
 
 const categories = ref([])
+
+// ---------- Umkreissuche ----------
+// null = kein Radius: nur nach Entfernung sortieren
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100, null]
+const DEFAULT_RADIUS_KM = 25
+const GEO_STORAGE_KEY = 'hng.events.geoFilter'
+
+const locationText = ref('')
+// { label, latitude, longitude } des gewählten Orts
+const geo = ref(null)
+const radiusKm = ref(DEFAULT_RADIUS_KM)
+
+// Nächstgrößerer Radius für "Umkreis vergrößern", undefined wenn es keinen gibt
+const nextRadius = computed(() => {
+  const idx = RADIUS_OPTIONS.indexOf(radiusKm.value)
+  return idx >= 0 && idx < RADIUS_OPTIONS.length - 1 ? RADIUS_OPTIONS[idx + 1] : undefined
+})
+
+const saveGeoFilter = () => {
+  try {
+    if (geo.value) localStorage.setItem(GEO_STORAGE_KEY, JSON.stringify({ ...geo.value, radiusKm: radiusKm.value }))
+    else localStorage.removeItem(GEO_STORAGE_KEY)
+  } catch {
+    // Speicher nicht verfügbar (privater Modus): Filter gilt nur für diese Sitzung
+  }
+}
+
+const restoreGeoFilter = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GEO_STORAGE_KEY) || 'null')
+    if (saved && Number.isFinite(saved.latitude) && Number.isFinite(saved.longitude)) {
+      geo.value = { label: saved.label || '', latitude: saved.latitude, longitude: saved.longitude }
+      locationText.value = geo.value.label
+      radiusKm.value = RADIUS_OPTIONS.includes(saved.radiusKm) ? saved.radiusKm : DEFAULT_RADIUS_KM
+    }
+  } catch {
+    // Ungültiger Eintrag: ohne Ortsfilter starten
+  }
+}
+
+const onLocationSelect = (place) => {
+  geo.value = { label: place.label, latitude: place.latitude, longitude: place.longitude }
+  saveGeoFilter()
+  fetchEvents()
+}
+
+const setRadius = (value) => {
+  if (radiusKm.value === value) return
+  radiusKm.value = value
+  saveGeoFilter()
+  fetchEvents()
+}
+
+const clearLocation = () => {
+  geo.value = null
+  locationText.value = ''
+  saveGeoFilter()
+  fetchEvents()
+}
+
+const eventParams = () => {
+  const params = { upcoming: true }
+  if (geo.value) {
+    params.lat = geo.value.latitude
+    params.lng = geo.value.longitude
+    if (radiusKm.value) params.radiusKm = radiusKm.value
+  }
+  return params
+}
+
+const requestEvents = () =>
+  $fetch(`${config.public.apiBase}/Events`, { params: eventParams(), headers: { Authorization: getAuthHeader() } })
+
+// Nur die Events neu laden (Ort oder Umkreis geändert). Eine ältere Antwort überschreibt keine neuere.
+let eventsRequestId = 0
+const fetchEvents = async () => {
+  const requestId = ++eventsRequestId
+  pending.value = true
+  error.value = false
+  try {
+    const data = await requestEvents()
+    if (requestId === eventsRequestId) events.value = data
+  } catch {
+    if (requestId === eventsRequestId) error.value = true
+  } finally {
+    if (requestId === eventsRequestId) pending.value = false
+  }
+}
 
 const pending = ref(true)
 const error = ref(false)
@@ -211,7 +345,7 @@ const loadEvents = async () => {
   error.value = false
   try {
     const [eventsRes, participationsRes, categoriesRes, preferencesRes] = await Promise.allSettled([
-      $fetch(`${config.public.apiBase}/Events`, { params: { upcoming: true }, headers: { Authorization: getAuthHeader() } }),
+      requestEvents(),
       $fetch(`${config.public.apiBase}/Participation/user`, {
         headers: { Authorization: getAuthHeader() },
       }),
@@ -247,5 +381,8 @@ const loadEvents = async () => {
   }
 }
 
-onMounted(loadEvents)
+onMounted(() => {
+  restoreGeoFilter()
+  loadEvents()
+})
 </script>

@@ -24,7 +24,14 @@
               <ImageUploadCrop :current-url="editImageCurrentUrl" :aspect-ratio="1" @change="f => editImageFile = f" />
             </div>
 
-            <AppField v-model="editForm.location" label="Ort" placeholder="Marktplatz" :required="true" />
+            <LocationAutocomplete
+              v-model="editForm.location"
+              v-model:coordinates="editCoordinates"
+              label="Ort"
+              placeholder="z. B. Marktplatz, 6850 Dornbirn"
+              hint="Ort aus der Liste wählen, damit Helfer:innen das Event in der Umkreissuche finden."
+              :required="true"
+            />
 
             <div class="grid grid-cols-2 gap-2">
               <AppField v-model="editForm.startDate" type="datetime-local" label="Start" :min="editMinStartDate" :required="true" />
@@ -212,6 +219,7 @@
 <script setup>
 import { getAuthHeader, authenticatedFetch } from '~/assets/utils/auth'
 import { useEventStatus } from '~/composables/useEventStatus'
+import LocationAutocomplete from '~/components/LocationAutocomplete.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -228,6 +236,8 @@ const { getStatusLabel, getStatusBadgeClass, getInterestedHelpers, getAppliedHel
 
 // State
 const editForm = ref({ title: '', description: '', location: '', startDate: '', endDate: '', eventStatus: 0 })
+// { latitude, longitude } des Standorts. Wird der Ort neu getippt, geocodiert das Backend ihn selbst.
+const editCoordinates = ref(null)
 const editImageFile = ref(null)
 const currentShifts = ref([])
 const showShiftForm = ref(false)
@@ -317,6 +327,9 @@ watch(() => props.event, async (ev) => {
     endDate: toLocal(ev.endDate),
     eventStatus: ev.eventStatus ?? 0,
   }
+  editCoordinates.value = ev.latitude != null && ev.longitude != null
+    ? { latitude: ev.latitude, longitude: ev.longitude }
+    : null
   currentShifts.value = []
   shiftsToDelete.value = []
   resetShiftForm()
@@ -358,6 +371,8 @@ const save = async () => {
         title: editForm.value.title,
         description: editForm.value.description,
         location: editForm.value.location,
+        latitude: editCoordinates.value?.latitude ?? null,
+        longitude: editCoordinates.value?.longitude ?? null,
         startDate: editForm.value.startDate,
         endDate: editForm.value.endDate,
         organizationId: props.event.organizationId,
