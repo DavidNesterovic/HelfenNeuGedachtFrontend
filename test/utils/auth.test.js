@@ -10,6 +10,7 @@ import {
   getUserInfo,
   getUserRole,
   getHomeRoute,
+  hasRole,
   authenticatedFetch,
 } from '~/assets/utils/auth'
 import { createToken, ROLE_CLAIM, inSeconds } from '../helpers/jwt'
@@ -110,13 +111,27 @@ describe('getUserRole / getHomeRoute', () => {
     expect(getUserRole()).toBeNull()
   })
 
-  it.each(['OrganizationUser', 'OrganizationAdmin', 'SuperAdmin'])(
+  it.each(['OrganizationUser', 'OrganizationAdmin'])(
     'leitet %s auf das Organisations-Dashboard',
     (role) => {
       saveToken(createToken({ [ROLE_CLAIM]: role }))
       expect(getHomeRoute()).toBe('/organization/dashboard')
     },
   )
+
+  it('leitet SuperAdmins in den Admin-Bereich, auch wenn die Rolle nicht die erste ist', () => {
+    saveToken(createToken({ [ROLE_CLAIM]: 'SuperAdmin' }))
+    expect(getHomeRoute()).toBe('/admin/newsletter')
+    saveToken(createToken({ [ROLE_CLAIM]: ['OrganizationAdmin', 'SuperAdmin'] }))
+    expect(getHomeRoute()).toBe('/admin/newsletter')
+  })
+
+  it('hasRole prüft alle Rollen im Token', () => {
+    expect(hasRole('SuperAdmin')).toBe(false)
+    saveToken(createToken({ [ROLE_CLAIM]: ['Helper', 'SuperAdmin'] }))
+    expect(hasRole('SuperAdmin')).toBe(true)
+    expect(hasRole('OrganizationAdmin')).toBe(false)
+  })
 
   it('leitet Helfer und Gäste auf /events', () => {
     expect(getHomeRoute()).toBe('/events')

@@ -79,18 +79,25 @@ export const getUserInfo = () => {
     return token ? parseJwt(token) : null;
 };
 
-const ORG_ROLES = ['OrganizationUser', 'OrganizationAdmin', 'SuperAdmin'];
+const ORG_ROLES = ['OrganizationUser', 'OrganizationAdmin'];
 
-export const getUserRole = () => {
+export const getUserRoles = () => {
     const tokenData = parseJwt(getToken());
-    if (!tokenData) return null;
+    if (!tokenData) return [];
     // ASP.NET Core emits ClaimTypes.Role as the full URI key in raw JWTs
     const role = tokenData['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
         ?? tokenData['role'];
-    return Array.isArray(role) ? role[0] : (role ?? null);
+    if (Array.isArray(role)) return role;
+    return role ? [role] : [];
 };
 
+export const getUserRole = () => getUserRoles()[0] ?? null;
+
+export const hasRole = (role) => getUserRoles().includes(role);
+
 export const getHomeRoute = () => {
+    // SuperAdmins haben keine eigene Organisation, ihr Bereich ist /admin
+    if (hasRole('SuperAdmin')) return '/admin/newsletter';
     const role = getUserRole();
     return role && ORG_ROLES.includes(role) ? '/organization/dashboard' : '/events';
 };

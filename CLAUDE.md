@@ -31,9 +31,10 @@ Tests live in `test/` (plain JS) and run in the `nuxt` Vitest environment (`vite
 - **Two user areas, split by role:**
   - Volunteer pages (`events.vue`, `event/[id].vue`, `user/*`) use `layout: 'user'` (mobile-first, `BottomNav`).
   - Organization pages (`organization/*`) use the `default` layout (fixed sidebar `OrganizationMenu`).
+  - Admin pages (`admin/*`, currently only the newsletter sign-ups from the landing page) use `layout: 'admin'` and `middleware: 'admin'` (SuperAdmin only).
   - Auth pages (login, register, password reset, org registration) set `layout: false`.
   - Protected pages opt in with `definePageMeta({ middleware: 'auth' })`. There is no global guard.
-- **Auth is client-side JWT in localStorage.** It is handled by `app/assets/utils/auth.js` (`saveToken`, `getAuthHeader`, `authenticatedFetch`, `getUserRole`, `getHomeRoute`). The role claim can arrive as the full ASP.NET `ClaimTypes.Role` URI key. `OrganizationUser`/`OrganizationAdmin`/`SuperAdmin` are routed to `/organization/dashboard` and everyone else to `/events`. Token claims such as `OrganizationId` are read with `getUserInfo()`. Auth checks only run on the client (`process.client`), because there is no server session.
+- **Auth is client-side JWT in localStorage.** It is handled by `app/assets/utils/auth.js` (`saveToken`, `getAuthHeader`, `authenticatedFetch`, `getUserRole`, `hasRole`, `getHomeRoute`). The role claim can arrive as the full ASP.NET `ClaimTypes.Role` URI key. `SuperAdmin` is routed to `/admin/newsletter`, `OrganizationUser`/`OrganizationAdmin` to `/organization/dashboard` and everyone else to `/events`. Token claims such as `OrganizationId` are read with `getUserInfo()`. Auth checks only run on the client (`process.client`), because there is no server session.
 - **API calls** go to `useRuntimeConfig().public.apiBase` (set in `nuxt.config.ts`; the standard Nuxt env override is `NUXT_PUBLIC_API_BASE`). There are two patterns:
   - `$fetch(url, { headers: { Authorization: getAuthHeader() } })`
   - `authenticatedFetch(url, opts)`, which uses native fetch, sets JSON Content-Type unless the body is FormData, and logs out on 401.
